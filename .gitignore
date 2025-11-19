@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+.envctl.db
+.envsqlite.db
+envctl.db
+.mypy_cache/
+pytest_cache/
+.cache/
+.idea/
+.vscode/
+
+# Poetry venv
+/.venv
