@@ -1,10 +1,36 @@
+version: "3.9"
+
 services:
   db:
     container_name: envctl-db
-    image: postgres:15
+    image: postgres:16
     environment:
       POSTGRES_DB: envctl
       POSTGRES_USER: envctl
       POSTGRES_PASSWORD: envctl
     ports:
       - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  api:
+    container_name: envctl-api
+    build: .
+    depends_on:
+      - db
+    environment:
+      # App reads this in app/core/config.py
+      DATABASE_URL: postgresql+psycopg2://envctl:envctl@db:5432/envctl
+      JWT_SECRET_KEY: "change-me-in-prod"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: >
+      poetry run uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+
+volumes:
+  db_data: {}
