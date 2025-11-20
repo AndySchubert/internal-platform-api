@@ -1,9 +1,10 @@
 # app/core/security.py
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Union
+import uuid
 
-from jose import jwt
 from passlib.context import CryptContext
+from jose import jwt
 
 from app.core.config import settings
 
@@ -18,11 +19,17 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> str:
-    if expires_minutes is None:
-        expires_minutes = settings.jwt_access_token_expires_minutes
+def create_access_token(
+    subject: Union[str, uuid.UUID],
+    expires_delta: timedelta | None = None,
+) -> str:
+    if isinstance(subject, uuid.UUID):
+        subject = str(subject)
 
-    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=settings.jwt_access_token_expires_minutes)
+    )
+
     to_encode = {"sub": subject, "exp": expire}
     encoded_jwt = jwt.encode(
         to_encode,
