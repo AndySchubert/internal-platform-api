@@ -1,4 +1,4 @@
-# envctl
+# internal developer platform API
 
 A small **internal developer platform API** built with FastAPI.  
 It manages **projects**, **environments**, and **deployments** — a lightweight, backend-only version of what tools like Heroku / Render / platform teams build.
