@@ -8,6 +8,11 @@ services:
       POSTGRES_DB: envctl
       POSTGRES_USER: envctl
       POSTGRES_PASSWORD: envctl
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
@@ -22,6 +27,11 @@ services:
       # App reads this in app/core/config.py
       DATABASE_URL: postgresql+psycopg2://envctl:envctl@db:5432/envctl
       JWT_SECRET_KEY: "change-me-in-prod"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     ports:
       - "8000:8000"
     volumes:
