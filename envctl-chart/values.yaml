@@ -1,0 +1,45 @@
+image:
+  repository: envctl-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80
+
+postgresql:
+  enabled: true
+  image:
+    repository: bitnami/postgresql
+    tag: latest
+    pullPolicy: IfNotPresent
+  auth:
+    username: postgres
+    password: yoursecurepassword
+    database: envctl
+  primary:
+    persistence:
+      size: 5Gi
+
+serviceAccount:
+  create: false
+
+ingress:
+  enabled: false
+
+httpRoute:
+  enabled: false
+
+autoscaling:
+  enabled: false
+
+livenessProbe:
+  httpGet:
+    path: /health 
+    port: 8000
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000

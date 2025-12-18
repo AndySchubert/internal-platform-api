@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-api
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: envctl-api
+  template:
+    metadata:
+      labels:
+        app: envctl-api
+    spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:1.35  # Or any recent tag; pulls from Docker Hub
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Waiting for Postgres to be ready..."
+          for i in $(seq 1 30); do  # Max 30 attempts (adjust as needed)
+            nc -z {{ .Release.Name }}-postgresql 5432 && echo "Postgres ready!" && exit 0
+            echo "Attempt $i: Postgres not ready yet. Waiting 5 seconds..."
+            sleep 5
+          done
+          echo "Postgres not ready after max attempts. Failing."
+          exit 1
+      containers:
+      - name: api
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.auth.database }}"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
