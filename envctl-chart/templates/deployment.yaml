@@ -12,6 +12,20 @@ spec:
       labels:
         app: envctl-api
     spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:1.35  # Or any recent tag; pulls from Docker Hub
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Waiting for Postgres to be ready..."
+          for i in $(seq 1 30); do  # Max 30 attempts (adjust as needed)
+            nc -z {{ .Release.Name }}-postgresql 5432 && echo "Postgres ready!" && exit 0
+            echo "Attempt $i: Postgres not ready yet. Waiting 5 seconds..."
+            sleep 5
+          done
+          echo "Postgres not ready after max attempts. Failing."
+          exit 1
       containers:
       - name: api
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
