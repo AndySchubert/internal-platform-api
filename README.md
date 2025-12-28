@@ -1,44 +1,56 @@
-# internal developer platform API
+# Internal Developer Platform API 🚀
 
-A small **internal developer platform API** built with FastAPI.  
-It manages **projects**, **environments**, and **deployments** — a lightweight, backend-only version of what tools like Heroku / Render / platform teams build.
+**Live Demo** (deployed & running in production):  
+🔗 **Swagger UI**: [https://internal-platform-api-3vr6excz6q-uc.a.run.app/docs](https://internal-platform-api-3vr6excz6q-uc.a.run.app/docs)  
+🔗 **ReDoc**: [https://internal-platform-api-3vr6excz6q-uc.a.run.app/redoc](https://internal-platform-api-3vr6excz6q-uc.a.run.app/redoc)
 
-It includes user authentication, environment lifecycle simulation, and deployment workflows.
+A small **internal developer platform API** built with FastAPI.
+
+It manages **projects**, **environments**, and **deployments** — a lightweight, backend-only prototype inspired by modern platform engineering tools (Heroku, Render, Backstage, Humanitec, or custom internal PaaS solutions).
+
+Includes user authentication, simulated environment lifecycle, and deployment workflows.
+
+### Production Deployment
+- **Backend**: Google Cloud Run (fully managed, auto-scaling, serverless)
+- **Database**: Neon (serverless PostgreSQL with connection pooling)
+- **Authentication**: JWT-based
+- **CI/CD**: GitHub → Docker build → Cloud Run deploy
 
 ---
 
 ## 🚀 Features
 
 ### 🔐 Authentication
-- Register, login, and JWT-based authentication  
-- Endpoints:  
-  `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/me`
+- Register, login, and JWT-based authentication
+- Endpoints: `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/me`
 
 ### 📦 Projects
-- Projects represent applications owned by authenticated users  
-- CRUD endpoints under `/api/v1/projects`
+- Represent applications owned by authenticated users
+- Full CRUD under `/api/v1/projects`
 
 ### 🌱 Environments
-- Each environment belongs to a project  
-- Types: `ephemeral` or `persistent`  
-- Lifecycle: `provisioning → running`  
-- TTL for ephemeral environments  
-- Fake base URL assigned during “provisioning”
+- Belong to a project
+- Types: `ephemeral` or `persistent`
+- Lifecycle simulation: `provisioning` → `running`
+- TTL support for ephemeral environments
+- Fake base URL assigned during provisioning
 
 ### 🚢 Deployments
-- Each deployment targets an environment  
-- Accepts version identifiers (git SHA, tag, etc)  
-- Lifecycle: `pending → running → succeeded`  
-- Fake logs URL  
-- Simulated async rollout process
+- Target a specific environment
+- Version tracking (git SHA, tag, etc.)
+- Lifecycle simulation: `pending` → `running` → `succeeded`
+- Fake logs endpoint
+- Simulated async rollout
 
 ### 🧱 Stack
 - **FastAPI**
 - **SQLAlchemy ORM**
 - **JWT (python-jose)**
-- **Passlib**
-- **Alembic-ready**
+- **Passlib** for password hashing
+- **Alembic-ready** migrations
 - **Poetry** for dependency management
+- **Docker** (multi-stage Dockerfile)
+- **Helm** chart for Kubernetes deployments (`envctl-chart/`)
 
 ---
 

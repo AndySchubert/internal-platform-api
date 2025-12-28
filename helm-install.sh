@@ -1,1 +1,0 @@
-helm install envctl ./envctl-chart --set postgresql.enabled=true

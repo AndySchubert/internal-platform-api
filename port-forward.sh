@@ -1,1 +1,0 @@
-kubectl port-forward envctl-api-f547b8d68-fdqtp 8080:8000 &

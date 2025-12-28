@@ -1,1 +1,0 @@
-nerdctl build --namespace k8s.io -t envctl-api:latest .
