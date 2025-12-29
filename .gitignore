@@ -1,15 +1,55 @@
+# Python
 __pycache__/
-*.pyc
-.env
-.env.*
-.envctl.db
-.envsqlite.db
-envctl.db
-.mypy_cache/
-pytest_cache/
-.cache/
-.idea/
-.vscode/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.ipynb_checkpoints
 
-# Poetry venv
-/.venv
+# FastAPI / Poetry
+.poetry/
+.instance/
+
+# Docker
+.docker/
+
+# Terraform - Important even if not used yet
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.tfstate
+.plan
+.tfplan
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
