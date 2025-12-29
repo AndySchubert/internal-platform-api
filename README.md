@@ -1,14 +1,14 @@
-# Internal Developer Platform API 🚀
+# Internal Developer Platform–Style API 🚀
 
-**Live Demo** (deployed & running in production):  
-🔗 **Swagger UI**: [https://internal-platform-api-3vr6excz6q-uc.a.run.app/docs](https://internal-platform-api-3vr6excz6q-uc.a.run.app/docs)  
-🔗 **ReDoc**: [https://internal-platform-api-3vr6excz6q-uc.a.run.app/redoc](https://internal-platform-api-3vr6excz6q-uc.a.run.app/redoc)
+**Live Demo** (publicly deployed for demonstration purposes):  
+🔗 **Swagger UI**: https://internal-platform-api-3vr6excz6q-uc.a.run.app/docs  
+🔗 **ReDoc**: https://internal-platform-api-3vr6excz6q-uc.a.run.app/redoc  
 
-A small **internal developer platform API** built with FastAPI.
+A small **backend-only API** built with FastAPI that explores patterns commonly used by **internal developer platforms**.
 
-It manages **projects**, **environments**, and **deployments** — a lightweight, backend-only prototype inspired by modern platform engineering tools (Heroku, Render, Backstage, Humanitec, or custom internal PaaS solutions).
+The API manages **projects**, **environments**, and **deployments** and is inspired by modern platform engineering tools such as Heroku, Render, Backstage, Humanitec, or custom internal PaaS solutions.
 
-Includes user authentication, simulated environment lifecycle, and deployment workflows.
+This project intentionally uses **simulated provisioning and deployment flows** to focus on **API design, data modelling, authentication, and platform concepts**, rather than real infrastructure execution.
 
 ### Production Deployment
 - **Backend**: Google Cloud Run (fully managed, auto-scaling, serverless)
