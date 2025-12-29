@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write  # Keep this for future Workload Identity switch
+      id-token: write  
 
     env:
-      REGION: europe-west3
+      REGION: us-central1       
       REPO_NAME: internal-platform-api
       IMAGE_NAME: internal-platform-api
-      PROJECT_ID: internal-platform-api  # Your GCP project ID
+      PROJECT_ID: internal-platform-api
 
     steps:
     - uses: actions/checkout@v4
