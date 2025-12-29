@@ -17,7 +17,7 @@ jobs:
       REGION: us-central1                 # Deine Artifact Registry Region (Iowa)
       REPO_NAME: internal-platform-api    # Name deines Artifact Registry Repos
       IMAGE_NAME: internal-platform-api   # Name des Docker Images
-      PROJECT_ID: internal-platform-api   # Dein GCP Project ID
+      PROJECT_ID: internal-platform-api   # Dein GCP Project ID (nur für lesbare Namen)
 
     steps:
     - uses: actions/checkout@v4
@@ -25,8 +25,8 @@ jobs:
     - name: Authenticate to Google Cloud (Workload Identity Federation)
       uses: google-github-actions/auth@v2
       with:
-        workload_identity_provider: 'projects/${{ env.PROJECT_ID }}/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-        service_account: 'github-actions-deploy@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
+        workload_identity_provider: 'projects/1062901461072/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+        service_account: 'github-actions-deploy@internal-platform-api.iam.gserviceaccount.com'
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
