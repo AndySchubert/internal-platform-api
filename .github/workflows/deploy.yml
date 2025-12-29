@@ -11,15 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # Keep this for future Workload Identity switch
 
     env:
       REGION: europe-west3
       REPO_NAME: internal-platform-api
       IMAGE_NAME: internal-platform-api
-      IMAGE_TAG: ${{ github.sha }}
-      PROJECT_ID: internal-platform-api 
-      FULL_IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      PROJECT_ID: internal-platform-api  # Your GCP project ID
 
     steps:
     - uses: actions/checkout@v4
@@ -36,10 +34,12 @@ jobs:
       run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
     - name: Build Docker image
-      run: docker build -t ${{ env.FULL_IMAGE }} .
+      run: >
+        docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
 
     - name: Push Docker image
-      run: docker push ${{ env.FULL_IMAGE }}
+      run: >
+        docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v3
