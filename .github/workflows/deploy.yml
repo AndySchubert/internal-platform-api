@@ -5,11 +5,21 @@ on:
     branches: 
       - main
       - feature/terraform-gcp
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
+
+    env:
+      REGION: europe-west3
+      REPO_NAME: internal-platform-api
+      IMAGE_NAME: internal-platform-api
+      IMAGE_TAG: ${{ github.sha }}
+      PROJECT_ID: internal-platform-api 
+      FULL_IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
     steps:
     - uses: actions/checkout@v4
@@ -18,17 +28,18 @@ jobs:
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-    
+
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Configure Docker for Artifact Registry
-      run: gcloud auth configure-docker europe-west3-docker.pkg.dev
+      run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
-    - name: Build and Push Docker Image
-      run: |
-        docker build -t ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/internal-platform-api/internal-platform-api:${{ github.sha }} .
-        docker push ${{ vars.REGION }}-docker.pkg.dev/${{ vars.PROJECT_ID }}/internal-platform-api/internal-platform-api:${{ github.sha }}
+    - name: Build Docker image
+      run: docker build -t ${{ env.FULL_IMAGE }} .
+
+    - name: Push Docker image
+      run: docker push ${{ env.FULL_IMAGE }}
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v3
@@ -39,7 +50,11 @@ jobs:
 
     - name: Terraform Apply
       working-directory: terraform
-      run: terraform apply -auto-approve -var="image_tag=${{ github.sha }}" -var="database_url=${{ secrets.DATABASE_URL }}"
+      run: |
+        terraform apply -auto-approve \
+          -var="image_tag=${{ github.sha }}" \
+          -var="database_url=${{ secrets.DATABASE_URL }}"
 
     - name: Output Cloud Run URL
+      working-directory: terraform
       run: echo "Deployed to $(terraform output -raw cloud_run_url)"
