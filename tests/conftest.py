@@ -1,4 +1,3 @@
-# tests/conftest.py
 import os
 
 import pytest
@@ -28,17 +27,12 @@ def override_get_db():
         db.close()
 
 
-# Override the app's DB dependency
 app.dependency_overrides[get_db] = override_get_db
-
-# Make background services use the SAME SessionLocal as the API in tests
 provisioning.SessionLocal = TestingSessionLocal
 deployments.SessionLocal = TestingSessionLocal
 
-
 @pytest.fixture(autouse=True)
 def reset_db():
-    """Drop & recreate all tables before each test."""
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield

@@ -1,5 +1,4 @@
 def test_register_and_login_and_me(client):
-    # register
     resp = client.post(
         "/api/v1/auth/register",
         json={"email": "test@example.com", "password": "secret123"},
@@ -9,7 +8,6 @@ def test_register_and_login_and_me(client):
     assert data["email"] == "test@example.com"
     assert "id" in data
 
-    # login
     resp = client.post(
         "/api/v1/auth/login",
         data={"username": "test@example.com", "password": "secret123"},
@@ -21,7 +19,6 @@ def test_register_and_login_and_me(client):
 
     token = token_data["access_token"]
 
-    # /me
     resp = client.get(
         "/api/v1/auth/me",
         headers={"Authorization": f"Bearer {token}"},
