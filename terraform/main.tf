@@ -18,6 +18,10 @@ resource "google_artifact_registry_repository" "repo" {
   repository_id = var.artifact_repo_id
   format        = "DOCKER"
   description   = "Repo for internal-platform-api images"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Cloud Run service
