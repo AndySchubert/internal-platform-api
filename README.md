@@ -1,20 +1,27 @@
 # Internal Developer Platform–Style API 🚀
 
-**Live Demo** (publicly deployed for demonstration purposes):  
-🔗 **Swagger UI**: https://internal-platform-api-3vr6excz6q-uc.a.run.app/docs  
-🔗 **ReDoc**: https://internal-platform-api-3vr6excz6q-uc.a.run.app/redoc  
+A **backend-only API** built with **FastAPI** that explores patterns commonly used in **internal developer platforms** and platform engineering teams.
 
-A small **backend-only API** built with FastAPI that explores patterns commonly used by **internal developer platforms**.
-
-The API manages **projects**, **environments**, and **deployments** and is inspired by modern platform engineering tools such as Heroku, Render, Backstage, Humanitec, or custom internal PaaS solutions.
+The API manages **projects**, **environments**, and **deployments**, inspired by tools such as Heroku, Render, Backstage, Humanitec, and custom internal PaaS solutions.
 
 This project intentionally uses **simulated provisioning and deployment flows** to focus on **API design, data modelling, authentication, and platform concepts**, rather than real infrastructure execution.
+
+---
+
+## 🌍 Live Demo (Cloud Run – Europe)
+
+- **Base URL**: https://internal-platform-api-3vr6excz6q-ew.a.run.app  
+- **Swagger UI**: https://internal-platform-api-3vr6excz6q-ew.a.run.app/docs  
+- **ReDoc**: https://internal-platform-api-3vr6excz6q-ew.a.run.app/redoc  
+- **Health**: https://internal-platform-api-3vr6excz6q-ew.a.run.app/health  
+
+---
 
 ### Production Deployment
 - **Backend**: Google Cloud Run (fully managed, auto-scaling, serverless)
 - **Database**: Neon (serverless PostgreSQL with connection pooling)
 - **Authentication**: JWT-based
-- **CI/CD**: GitHub → Docker build → Cloud Run deploy
+- **CI/CD**: GitHub Actions → Docker → Terraform → Cloud Run
 
 ---
 
@@ -41,6 +48,7 @@ This project intentionally uses **simulated provisioning and deployment flows** 
 - Lifecycle simulation: `pending` → `running` → `succeeded`
 - Fake logs endpoint
 - Simulated async rollout
+- Deployment state transitions are simulated to mirror real-world platform behavior
 
 ### 🧱 Stack
 - **FastAPI**
@@ -51,6 +59,7 @@ This project intentionally uses **simulated provisioning and deployment flows** 
 - **Poetry** for dependency management
 - **Docker** (multi-stage Dockerfile)
 - **Helm** chart for Kubernetes deployments (`envctl-chart/`)
+- **Pytest** for API and integration testing
 
 ---
 
