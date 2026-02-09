@@ -24,6 +24,11 @@ resource "google_artifact_registry_repository" "repo" {
   }
 }
 
+import {
+  to = google_artifact_registry_repository.repo
+  id = "projects/internal-platform-api/locations/europe-west1/repositories/internal-platform-api-eu"
+}
+
 # Cloud Run service
 resource "google_cloud_run_v2_service" "api" {
   name     = "internal-platform-api"
