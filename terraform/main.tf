@@ -29,6 +29,11 @@ import {
   id = "projects/internal-platform-api/locations/europe-west1/repositories/internal-platform-api-eu"
 }
 
+import {
+  to = google_cloud_run_v2_service.api
+  id = "projects/internal-platform-api/locations/europe-west1/services/internal-platform-api"
+}
+
 # Cloud Run service
 resource "google_cloud_run_v2_service" "api" {
   name     = "internal-platform-api"
