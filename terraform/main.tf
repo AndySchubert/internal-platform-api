@@ -77,5 +77,5 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
 }
 
 output "cloud_run_url" {
-  value = google_cloud_run_v2_service.api.uri
+  value = try(google_cloud_run_v2_service.api.uri, null)
 }
