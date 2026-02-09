@@ -4,7 +4,7 @@ on:
   push:
     branches: 
       - main
-      - feature/terraform-gcp
+      - feature/pytest
 
 jobs:
   build-and-deploy:
