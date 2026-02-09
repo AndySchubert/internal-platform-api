@@ -40,7 +40,7 @@ jobs:
         working-directory: terraform
         run: terraform init
 
-      - name: Terraform Apply (create infra)
+      - name: Terraform Apply (create/update Artifact Registry)
         working-directory: terraform
         env:
           TF_VAR_project_id: ${{ env.PROJECT_ID }}
@@ -48,7 +48,7 @@ jobs:
           TF_VAR_artifact_repo_id: ${{ env.REPO_NAME }}
           TF_VAR_image_tag: latest
           TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -target=google_artifact_registry_repository.repo
 
       # 2) Build & push image
       - name: Define image reference
