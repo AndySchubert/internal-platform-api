@@ -1,0 +1,4 @@
+project_id       = "internal-platform-api"
+region           = "europe-west1"
+artifact_repo_id = "internal-platform-api-eu"
+image_tag        = "latest"
