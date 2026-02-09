@@ -15,7 +15,7 @@ provider "google" {
 # Artifact Registry for Docker images
 resource "google_artifact_registry_repository" "repo" {
   location      = var.region
-  repository_id = "internal-platform-api"
+  repository_id = var.artifact_repo_id
   format        = "DOCKER"
   description   = "Repo for internal-platform-api images"
 }

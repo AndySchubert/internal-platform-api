@@ -16,7 +16,7 @@ jobs:
     env:
       CLOUD_RUN_REGION: europe-west1
       AR_REGION: europe-west1
-      REPO_NAME: internal-platform-api
+      REPO_NAME: internal-platform-api-eu
       IMAGE_NAME: internal-platform-api
       PROJECT_ID: internal-platform-api
 

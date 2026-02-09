@@ -20,3 +20,9 @@ variable "database_url" {
   description = "Database connection URL (sensitive)"
   sensitive   = true
 }
+
+variable "artifact_repo_id" {
+  type        = string
+  description = "Artifact Registry repository ID (name)"
+  default     = "internal-platform-api-eu"
+}
