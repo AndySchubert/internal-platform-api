@@ -53,3 +53,5 @@ override.tf.json
 # OS
 .DS_Store
 Thumbs.db
+
+*.db

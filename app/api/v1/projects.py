@@ -1,12 +1,12 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.api.v1.auth import get_current_user
-from app.models.project import Project
 from app.schemas.project import ProjectCreate, ProjectRead
 from app.models.user import User
+from app.services import projects as projects_service
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -16,12 +16,7 @@ def list_projects(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return (
-        db.query(Project)
-        .filter(Project.owner_id == current_user.id)
-        .order_by(Project.created_at.desc())
-        .all()
-    )
+    return projects_service.get_projects_for_user(db, current_user.id)
 
 
 @router.post("/", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
@@ -30,16 +25,7 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    project = Project(
-        name=project_in.name,
-        description=project_in.description,
-        repo_url=str(project_in.repo_url) if project_in.repo_url else None,
-        owner_id=current_user.id,
-    )
-    db.add(project)
-    db.commit()
-    db.refresh(project)
-    return project
+    return projects_service.create_project_for_user(db, project_in, current_user.id)
 
 
 @router.get("/{project_id}", response_model=ProjectRead)
@@ -48,12 +34,7 @@ def get_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    project = db.query(Project).filter(Project.id == project_id).first()
-
-    if not project or project.owner_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-
-    return project
+    return projects_service.get_project_by_id_for_user(db, project_id, current_user.id)
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -62,10 +43,4 @@ def delete_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    project = db.query(Project).filter(Project.id == project_id).first()
-
-    if not project or project.owner_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-
-    db.delete(project)
-    db.commit()
+    projects_service.delete_project_for_user(db, project_id, current_user.id)
