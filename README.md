@@ -4,6 +4,14 @@ A **backend-only API** built with **FastAPI** that explores patterns commonly us
 
 The API manages **projects**, **environments**, and **deployments**, inspired by tools such as Heroku, Render, Backstage, Humanitec, and custom internal PaaS solutions.
 
+```mermaid
+graph LR
+    A[Client/CLI] --> B[FastAPI]
+    B --> C[(PostgreSQL)]
+    B --> D[Simulated Provisioner]
+    D --> E[Simulated Deployment]
+```
+
 This project intentionally uses **simulated provisioning and deployment flows** to focus on **API design, data modelling, authentication, and platform concepts**, rather than real infrastructure execution.
 
 ---
@@ -177,15 +185,18 @@ app/
 
 ---
 
-## 🧩 Future Improvements (optional)
+## Prerequisites
+- **Python**: 3.12+ 
+- **Poetry**: For dependency management
+- **PostgreSQL**: (Optional) Required if not using the default SQLite logic (though the README mentions Neon/Postgres for production).
 
+## 🧩 Future Improvements
 - Real provisioning via Kubernetes (helm, kubectl)
 - GitOps integration
 - Async worker with Celery / RQ
 - Real logs streaming
 - Proper environment variables & secrets management
 - Docker Compose (API + Postgres)
-- Pytest test suite
 
 ---
 
