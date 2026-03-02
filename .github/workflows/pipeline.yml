@@ -1,0 +1,47 @@
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - feature/pytest
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    uses: AndySchubert/cicd-templates/.github/workflows/python-ci.yml@main
+    with:
+      python-version: "3.12"
+
+  build-image:
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest')
+    uses: AndySchubert/cicd-templates/.github/workflows/docker-build-push.yml@main
+    with:
+      image-name: "internal-platform-api"
+      project-id: "internal-platform-api"
+      repo-name: "internal-platform-api-eu"
+      region: "europe-west1"
+    secrets:
+      GCP_WIF_PROVIDER: "projects/1062901461072/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+      GCP_SERVICE_ACCOUNT: "github-actions-deploy@internal-platform-api.iam.gserviceaccount.com"
+
+  deploy-infra:
+    needs: build-image
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest')
+    uses: AndySchubert/cicd-templates/.github/workflows/terraform-deploy.yml@main
+    with:
+      project-id: "internal-platform-api"
+      region: "europe-west1"
+      artifact-repo-id: "internal-platform-api-eu"
+      image-tag: ${{ github.sha }}
+      working-directory: "terraform"
+      # The envctl deploy.yml passed this to both TF applies
+      extra-tf-vars: "-var=\"database_url=${{ secrets.DATABASE_URL }}\""
+    secrets:
+      GCP_WIF_PROVIDER: "projects/1062901461072/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+      GCP_SERVICE_ACCOUNT: "github-actions-deploy@internal-platform-api.iam.gserviceaccount.com"
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
