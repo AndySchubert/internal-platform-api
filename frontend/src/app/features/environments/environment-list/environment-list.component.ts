@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EnvironmentsService } from '../environments.service';
@@ -28,7 +28,9 @@ export class EnvironmentListComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private environmentsService: EnvironmentsService,
-    private projectsService: ProjectsService
+    private projectsService: ProjectsService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -50,26 +52,40 @@ export class EnvironmentListComponent implements OnInit, OnDestroy {
     if (!this.projectId) return;
     this.projectsService.getProject(this.projectId).subscribe({
       next: (project) => {
-        this.project = project;
+        this.ngZone.run(() => {
+          this.project = project;
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to load project';
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to load project';
+          this.cdr.detectChanges();
+        });
       }
     });
   }
 
   loadEnvironments(): void {
+    console.log('EnvironmentListComponent: Loading environments for projectId:', this.projectId);
     if (!this.projectId) return;
     this.loading = true;
     this.error = null;
     this.environmentsService.getEnvironments(this.projectId).subscribe({
       next: (environments) => {
-        this.environments = environments;
-        this.loading = false;
+        console.log('EnvironmentListComponent: loadEnvironments success', environments);
+        this.ngZone.run(() => {
+          this.environments = environments;
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to load environments';
-        this.loading = false;
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to load environments';
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       }
     });
   }
@@ -78,14 +94,17 @@ export class EnvironmentListComponent implements OnInit, OnDestroy {
     if (!this.projectId) return;
     this.pollingSubscription = this.environmentsService.pollEnvironments(this.projectId).subscribe({
       next: (environments) => {
-        // Only update if statuses changed
-        const hasChanges = this.environments.some((env) => {
-          const newEnv = environments.find(e => e.id === env.id);
-          return newEnv && newEnv.status !== env.status;
+        this.ngZone.run(() => {
+          // Only update if statuses changed
+          const hasChanges = this.environments.some((env) => {
+            const newEnv = environments.find(e => e.id === env.id);
+            return newEnv && newEnv.status !== env.status;
+          });
+          if (hasChanges) {
+            this.environments = environments;
+            this.cdr.detectChanges();
+          }
         });
-        if (hasChanges) {
-          this.environments = environments;
-        }
       },
       error: () => {
         // Silently fail polling
@@ -100,10 +119,18 @@ export class EnvironmentListComponent implements OnInit, OnDestroy {
 
     this.environmentsService.deleteEnvironment(id).subscribe({
       next: () => {
-        this.loadEnvironments();
+        console.log('EnvironmentListComponent: deleteEnvironment success', id);
+        this.ngZone.run(() => {
+          this.loadEnvironments();
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to delete environment.';
+        console.error('EnvironmentListComponent: deleteEnvironment failed', err);
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to delete environment.';
+          this.cdr.detectChanges();
+        });
       }
     });
   }

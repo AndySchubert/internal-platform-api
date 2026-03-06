@@ -60,7 +60,8 @@
               "buildTarget": "envctl-ui:build:production"
             },
             "development": {
-              "buildTarget": "envctl-ui:build:development"
+              "buildTarget": "envctl-ui:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

@@ -45,8 +45,12 @@
       </div>
 
       <div *ngIf="successMessage" class="alert alert-success"
-        style="background-color: #d4edda; color: #155724; padding: 12px; border-radius: 4px; margin-bottom: 16px; font-weight: 500;">
-        {{ successMessage }}
+        style="background-color: #d4edda; color: #155724; padding: 16px; border-radius: 4px; margin-bottom: 24px; font-weight: 500; border: 1px solid #c3e6cb;">
+        <p style="margin: 0 0 8px 0;">{{ successMessage }}</p>
+        <p style="margin: 0; font-size: 0.9em; color: #1e7e34;">
+          <strong>Device Notice:</strong> Since this is a development environment, a <strong>MOCK EMAIL</strong> has been sent. 
+          Please check the terminal where you ran <code>make all</code> to find the verification link.
+        </p>
       </div>
 
       <button *ngIf="!successMessage" type="submit" class="btn btn-primary"

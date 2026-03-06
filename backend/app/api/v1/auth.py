@@ -17,7 +17,7 @@ def get_current_user(
     request: Request,
     db: Session = Depends(get_db),
 ) -> User:
-    session_id = request.cookies.get("__Host-session")
+    session_id = request.cookies.get("envctl-session")
     if not session_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
@@ -59,10 +59,10 @@ def login(
 
     # Set Session Cookie
     response.set_cookie(
-        key="__Host-session",
+        key="envctl-session",
         value=session_id,
         httponly=True,
-        secure=True,     # Must be True for __Host prefix
+        secure=False,    # Explicitly False for local plain HTTP
         samesite="lax",
         path="/"
     )
@@ -73,7 +73,7 @@ def login(
         key="XSRF-TOKEN",
         value=csrf_token,
         httponly=False,  # MUST be False so Angular JS can read it
-        secure=True,
+        secure=False,     # Explicitly False for local plain HTTP
         samesite="lax",
         path="/"
     )
@@ -83,11 +83,11 @@ def login(
 
 @router.post("/logout")
 def logout(request: Request, response: Response, db: Session = Depends(get_db)):
-    session_id = request.cookies.get("__Host-session")
+    session_id = request.cookies.get("envctl-session")
     if session_id:
         auth_service.revoke_session(db, session_id)
         
-    response.delete_cookie(key="__Host-session", path="/")
+    response.delete_cookie(key="envctl-session", path="/")
     response.delete_cookie(key="XSRF-TOKEN", path="/")
     return {"detail": "Successfully logged out"}
 

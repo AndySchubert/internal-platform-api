@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProjectsService } from '../projects.service';
@@ -21,7 +21,9 @@ export class ProjectDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private projectsService: ProjectsService
+    private projectsService: ProjectsService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -36,12 +38,18 @@ export class ProjectDetailComponent implements OnInit {
     this.error = null;
     this.projectsService.getProject(id).subscribe({
       next: (project) => {
-        this.project = project;
-        this.loading = false;
+        this.ngZone.run(() => {
+          this.project = project;
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to load project';
-        this.loading = false;
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to load project';
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       }
     });
   }

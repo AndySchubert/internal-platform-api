@@ -6,7 +6,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.method in ["POST", "PUT", "PATCH", "DELETE"]:
             # If a session cookie is present, we mandate CSRF protection
-            session = request.cookies.get("__Host-session")
+            session = request.cookies.get("envctl-session")
             if session:
                 xsrf_cookie = request.cookies.get("XSRF-TOKEN")
                 xsrf_header = request.headers.get("X-XSRF-TOKEN")

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -27,7 +27,9 @@ export class EnvironmentCreateComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private environmentsService: EnvironmentsService,
-    private projectsService: ProjectsService
+    private projectsService: ProjectsService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.environmentForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -52,17 +54,27 @@ export class EnvironmentCreateComponent implements OnInit {
         this.environmentForm.get('ttl_hours')?.setValue(null);
       }
       this.environmentForm.get('ttl_hours')?.updateValueAndValidity();
+      this.cdr.detectChanges();
     });
   }
 
   loadProject(): void {
+    console.log('EnvironmentCreateComponent: Loading project for projectId:', this.projectId);
     if (!this.projectId) return;
     this.projectsService.getProject(this.projectId).subscribe({
       next: (project) => {
-        this.project = project;
+        console.log('EnvironmentCreateComponent: loadProject success', project);
+        this.ngZone.run(() => {
+          this.project = project;
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to load project';
+        console.error('EnvironmentCreateComponent: loadProject failed', err);
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to load project';
+          this.cdr.detectChanges();
+        });
       }
     });
   }
@@ -84,14 +96,23 @@ export class EnvironmentCreateComponent implements OnInit {
       ttl_hours: formValue.type === 'ephemeral' ? formValue.ttl_hours : undefined
     };
 
+    console.log('EnvironmentCreateComponent: Submitting environment...', envData);
     this.environmentsService.createEnvironment(this.projectId, envData).subscribe({
       next: (environment) => {
-        this.loading = false;
-        this.router.navigate(['/projects', this.projectId, 'environments']);
+        console.log('EnvironmentCreateComponent: createEnvironment success', environment);
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.router.navigate(['/projects', this.projectId, 'environments']);
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.loading = false;
-        this.error = err.error?.detail || 'Failed to create environment';
+        console.error('EnvironmentCreateComponent: createEnvironment failed', err);
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.error = err.error?.detail || 'Failed to create environment';
+          this.cdr.detectChanges();
+        });
       }
     });
   }

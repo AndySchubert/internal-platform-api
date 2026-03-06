@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -20,7 +20,9 @@ export class ProjectCreateComponent {
   constructor(
     private fb: FormBuilder,
     private projectsService: ProjectsService,
-    private router: Router
+    private router: Router,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.projectForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -44,14 +46,23 @@ export class ProjectCreateComponent {
       repo_url: formValue.repo_url || undefined
     };
 
+    console.log('ProjectCreateComponent: Submitting project...', projectData);
     this.projectsService.createProject(projectData).subscribe({
       next: (project) => {
-        this.loading = false;
-        this.router.navigate(['/projects', project.id]);
+        console.log('ProjectCreateComponent: createProject success', project);
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.router.navigate(['/projects']);
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.loading = false;
-        this.error = err.error?.detail || 'Failed to create project';
+        console.error('ProjectCreateComponent: createProject failed', err);
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.error = err.error?.detail || 'Failed to create project';
+          this.cdr.detectChanges();
+        });
       }
     });
   }

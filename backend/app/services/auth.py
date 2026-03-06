@@ -16,6 +16,16 @@ import app.repositories.users as users_repo
 import app.repositories.sessions as sessions_repo
 
 
+def ensure_utc(dt: datetime | None) -> datetime | None:
+    """Ensure a datetime is timezone-aware and set to UTC, handling naive datetimes from SQLite."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+
 def register_user(db: Session, user_in: UserCreate) -> None:
     """
     Register a user. If they already exist, we silently do nothing or resend email.
@@ -35,6 +45,9 @@ def register_user(db: Session, user_in: UserCreate) -> None:
             users_repo.update_user(db, existing)
             send_verification_email(existing.email, raw_token)
         # If already verified, we do nothing to prevent enumeration
+        import logging
+        logger = logging.getLogger("envctl")
+        logger.info(f"Account {existing.email} is already verified. Generic response returned, no email sent.")
         return
 
     # New user
@@ -59,7 +72,8 @@ def verify_email_token(db: Session, token: str) -> bool:
     if not user:
         return False
         
-    if not user.verification_token_expires_at or user.verification_token_expires_at < datetime.now(timezone.utc):
+    expires_at = ensure_utc(user.verification_token_expires_at)
+    if not expires_at or expires_at < datetime.now(timezone.utc):
         return False
 
     user.is_verified = True
@@ -79,7 +93,8 @@ def authenticate_user(db: Session, email: str, password: str) -> tuple[User | No
         return None, None
         
     # Check Lockout
-    if user.lockout_until and user.lockout_until > datetime.now(timezone.utc):
+    lockout_until = ensure_utc(user.lockout_until)
+    if lockout_until and lockout_until > datetime.now(timezone.utc):
         return None, None
         
     # Check Password
@@ -94,6 +109,12 @@ def authenticate_user(db: Session, email: str, password: str) -> tuple[User | No
         
     # Check Verified Status (Must be verified to login)
     if not user.is_verified:
+        # Securely resend verification email on correct password for unverified account
+        raw_token = generate_random_token()
+        user.verification_token_hash = hash_token(raw_token)
+        user.verification_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+        users_repo.update_user(db, user)
+        send_verification_email(user.email, raw_token)
         return None, None
 
     # Success: Reset lockouts
@@ -127,7 +148,10 @@ def get_current_user_from_session_id(db: Session, raw_session_id: str) -> User |
     if not session_record:
         return None
         
-    if session_record.revoked_at or session_record.expires_at < datetime.now(timezone.utc):
+    revoked_at = ensure_utc(session_record.revoked_at)
+    expires_at = ensure_utc(session_record.expires_at)
+    
+    if revoked_at or (expires_at and expires_at < datetime.now(timezone.utc)):
         return None
         
     # Update last seen (throttle this in high-traffic, but fine for now)

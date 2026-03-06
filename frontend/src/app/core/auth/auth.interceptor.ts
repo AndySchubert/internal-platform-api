@@ -25,8 +25,15 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
-          // Unauthorized - redirect to login
-          this.router.navigate(['/login']);
+          const isAuthEndpoint = request.url.includes('/auth/login') ||
+            request.url.includes('/auth/me') ||
+            request.url.includes('/auth/register') ||
+            request.url.includes('/auth/verify-email');
+
+          if (!isAuthEndpoint) {
+            // Only redirect for protected data endpoints
+            this.router.navigate(['/login']);
+          }
         }
         return throwError(() => error);
       })

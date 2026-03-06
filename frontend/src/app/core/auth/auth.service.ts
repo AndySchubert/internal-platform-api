@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, map, tap, catchError, of } from 'rxjs';
+import { Observable, BehaviorSubject, map, tap, catchError, of, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { User } from '../../shared/models/user.model';
@@ -31,37 +31,35 @@ export class AuthService {
     this.loadCurrentUser().subscribe();
   }
 
-  login(credentials: LoginCredentials): Observable<any> {
-    const formData = new FormData();
-    formData.append('username', credentials.username);
-    formData.append('password', credentials.password);
+  login(credentials: LoginCredentials): Observable<User | null> {
+    console.log('AuthService: Attempting login for', credentials.username);
+    const params = new URLSearchParams();
+    params.append('username', credentials.username);
+    params.append('password', credentials.password);
 
-    return this.http.post(
-      `${environment.apiUrl}/api/v1/auth/login`,
-      formData
+    return this.http.post<any>(
+      '/api/v1/auth/login',
+      params.toString(),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      }
     ).pipe(
-      tap(() => {
-        this.loadCurrentUser().subscribe();
-      })
+      tap(res => console.log('AuthService: Login POST success', res)),
+      switchMap(() => this.loadCurrentUser()),
+      tap(user => console.log('AuthService: Final user state after login', user))
     );
   }
 
   register(data: RegisterData): Observable<any> {
-    return this.http.post(
-      `${environment.apiUrl}/api/v1/auth/register`,
-      data
-    );
+    return this.http.post('/api/v1/auth/register', data);
   }
 
   verifyEmail(token: string): Observable<any> {
-    return this.http.post(
-      `${environment.apiUrl}/api/v1/auth/verify-email`,
-      { token }
-    );
+    return this.http.post('/api/v1/auth/verify-email', { token });
   }
 
   logout(): void {
-    this.http.post(`${environment.apiUrl}/api/v1/auth/logout`, {}).subscribe({
+    this.http.post('/api/v1/auth/logout', {}).subscribe({
       next: () => {
         this.currentUserSubject.next(null);
         this.router.navigate(['/login']);
@@ -88,9 +86,14 @@ export class AuthService {
   }
 
   loadCurrentUser(): Observable<User | null> {
-    return this.http.get<User>(`${environment.apiUrl}/api/v1/auth/me`).pipe(
-      tap(user => this.currentUserSubject.next(user)),
-      catchError(() => {
+    console.log('AuthService: Loading current user...');
+    return this.http.get<User>('/api/v1/auth/me').pipe(
+      tap(user => {
+        console.log('AuthService: loadCurrentUser success', user);
+        this.currentUserSubject.next(user);
+      }),
+      catchError(err => {
+        console.warn('AuthService: loadCurrentUser failed (unauthenticated)', err);
         this.currentUserSubject.next(null);
         return of(null);
       })

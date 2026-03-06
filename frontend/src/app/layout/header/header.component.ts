@@ -1,4 +1,4 @@
-import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -16,13 +16,17 @@ export class HeaderComponent implements OnInit {
   currentUser: User | null = null;
   private destroyRef = inject(DestroyRef);
 
-  constructor(private authService: AuthService) { }
+  constructor(
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(user => {
       this.currentUser = user ?? null;
+      this.cdr.detectChanges();
     });
   }
 

@@ -11,5 +11,9 @@ class Settings(BaseModel):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expires_minutes: int = 60
 
+    @property
+    def is_development(self) -> bool:
+        return self.database_url.startswith("sqlite")
+
 
 settings = Settings()

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DeploymentsService } from '../deployments.service';
@@ -28,7 +28,9 @@ export class DeploymentListComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private deploymentsService: DeploymentsService,
-    private environmentsService: EnvironmentsService
+    private environmentsService: EnvironmentsService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -47,29 +49,45 @@ export class DeploymentListComponent implements OnInit, OnDestroy {
   }
 
   loadEnvironment(): void {
+    console.log('DeploymentListComponent: Loading environment for envId:', this.environmentId);
     if (!this.environmentId) return;
     this.environmentsService.getEnvironment(this.environmentId).subscribe({
       next: (environment) => {
-        this.environment = environment;
+        console.log('DeploymentListComponent: loadEnvironment success', environment);
+        this.ngZone.run(() => {
+          this.environment = environment;
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to load environment';
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to load environment';
+          this.cdr.detectChanges();
+        });
       }
     });
   }
 
   loadDeployments(): void {
+    console.log('DeploymentListComponent: Loading deployments for envId:', this.environmentId);
     if (!this.environmentId) return;
     this.loading = true;
     this.error = null;
     this.deploymentsService.getDeployments(this.environmentId).subscribe({
       next: (deployments) => {
-        this.deployments = deployments;
-        this.loading = false;
+        console.log('DeploymentListComponent: loadDeployments success', deployments);
+        this.ngZone.run(() => {
+          this.deployments = deployments;
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to load deployments';
-        this.loading = false;
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to load deployments';
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       }
     });
   }
@@ -78,14 +96,17 @@ export class DeploymentListComponent implements OnInit, OnDestroy {
     if (!this.environmentId) return;
     this.pollingSubscription = this.deploymentsService.pollDeployments(this.environmentId).subscribe({
       next: (deployments) => {
-        // Only update if statuses changed
-        const hasChanges = this.deployments.some((dep) => {
-          const newDep = deployments.find(d => d.id === dep.id);
-          return newDep && newDep.status !== dep.status;
+        this.ngZone.run(() => {
+          // Only update if statuses changed
+          const hasChanges = this.deployments.some((dep) => {
+            const newDep = deployments.find(d => d.id === dep.id);
+            return newDep && newDep.status !== dep.status;
+          });
+          if (hasChanges) {
+            this.deployments = deployments;
+            this.cdr.detectChanges();
+          }
         });
-        if (hasChanges) {
-          this.deployments = deployments;
-        }
       },
       error: () => {
         // Silently fail polling

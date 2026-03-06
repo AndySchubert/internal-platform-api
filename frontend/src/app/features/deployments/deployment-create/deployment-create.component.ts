@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -26,7 +26,9 @@ export class DeploymentCreateComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private deploymentsService: DeploymentsService,
-    private environmentsService: EnvironmentsService
+    private environmentsService: EnvironmentsService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.deploymentForm = this.fb.group({
       version: ['', [Validators.required]]
@@ -44,13 +46,19 @@ export class DeploymentCreateComponent implements OnInit {
     if (!this.environmentId) return;
     this.environmentsService.getEnvironment(this.environmentId).subscribe({
       next: (environment) => {
-        this.environment = environment;
-        if (environment.status !== 'running') {
-          this.error = `Environment is not ready (status: ${environment.status}). Only running environments can receive deployments.`;
-        }
+        this.ngZone.run(() => {
+          this.environment = environment;
+          if (environment.status !== 'running') {
+            this.error = `Environment is not ready (status: ${environment.status}). Only running environments can receive deployments.`;
+          }
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to load environment';
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to load environment';
+          this.cdr.detectChanges();
+        });
       }
     });
   }
@@ -71,14 +79,22 @@ export class DeploymentCreateComponent implements OnInit {
     this.error = null;
 
     const { version } = this.deploymentForm.value;
+    console.log('DeploymentCreateComponent: Submitting deployment...', { version });
     this.deploymentsService.createDeployment(this.environmentId, { version }).subscribe({
       next: (deployment) => {
-        this.loading = false;
-        this.router.navigate(['/environments', this.environmentId, 'deployments']);
+        console.log('DeploymentCreateComponent: createDeployment success', deployment);
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.router.navigate(['/environments', this.environmentId, 'deployments']);
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.loading = false;
-        this.error = err.error?.detail || 'Failed to create deployment';
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.error = err.error?.detail || 'Failed to create deployment';
+          this.cdr.detectChanges();
+        });
       }
     });
   }

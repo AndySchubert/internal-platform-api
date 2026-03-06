@@ -1,13 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
-    selector: 'app-verify-email',
-    standalone: true,
-    imports: [CommonModule, RouterModule],
-    template: `
+  selector: 'app-verify-email',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  template: `
     <div class="verify-container">
       <div class="verify-card">
         <h1>Email Verification</h1>
@@ -18,7 +18,7 @@ import { AuthService } from '../../../core/auth/auth.service';
         
         <div *ngIf="!loading && success" class="status-message success">
           <p>Success! Your email has been verified.</p>
-          <a routerLink="/login" class="btn btn-primary">Proceed to Login</a>
+          <p>You will be redirected to the login page shortly...</p>
         </div>
         
         <div *ngIf="!loading && error" class="status-message error">
@@ -28,7 +28,7 @@ import { AuthService } from '../../../core/auth/auth.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .verify-container {
       display: flex;
       justify-content: center;
@@ -55,34 +55,50 @@ import { AuthService } from '../../../core/auth/auth.service';
   `]
 })
 export class VerifyEmailComponent implements OnInit {
-    loading = true;
-    success = false;
-    error: string | null = null;
+  loading = true;
+  success = false;
+  error: string | null = null;
 
-    constructor(
-        private route: ActivatedRoute,
-        private authService: AuthService,
-        private router: Router
-    ) { }
+  constructor(
+    private route: ActivatedRoute,
+    private authService: AuthService,
+    private router: Router,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
+  ) { }
 
-    ngOnInit(): void {
-        const token = this.route.snapshot.queryParamMap.get('token');
+  ngOnInit(): void {
+    const token = this.route.snapshot.queryParamMap.get('token');
+    console.log('Verification token:', token);
 
-        if (!token) {
-            this.loading = false;
-            this.error = "No verification token provided in the URL.";
-            return;
-        }
-
-        this.authService.verifyEmail(token).subscribe({
-            next: () => {
-                this.loading = false;
-                this.success = true;
-            },
-            error: (err) => {
-                this.loading = false;
-                this.error = err.error?.detail || "Invalid or expired verification link.";
-            }
-        });
+    if (!token) {
+      this.loading = false;
+      this.error = "No verification token provided in the URL.";
+      return;
     }
+
+    this.authService.verifyEmail(token).subscribe({
+      next: (res) => {
+        console.log('Verification success:', res);
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.success = true;
+          this.cdr.detectChanges();
+
+          // Auto-redirect after 3 seconds
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 3000);
+        });
+      },
+      error: (err) => {
+        console.error('Verification error:', err);
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.error = err.error?.detail || "Invalid or expired verification link.";
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
 }

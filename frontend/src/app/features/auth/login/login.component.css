@@ -120,3 +120,22 @@ label {
 .register-link a:hover {
   text-decoration: underline;
 }
+
+.dev-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #ddd;
+}
+
+.dev-btn {
+  background-color: #f8f9fa;
+  color: #666;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.dev-btn:hover:not(:disabled) {
+  background-color: #e9ecef;
+  border-color: #ccc;
+  color: #333;
+}

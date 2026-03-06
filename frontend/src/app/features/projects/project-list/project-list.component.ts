@@ -1,14 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ProjectsService } from '../projects.service';
 import { Project } from '../../../shared/models/project.model';
-import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, LoadingSpinnerComponent],
+  imports: [CommonModule, RouterModule],
   templateUrl: './project-list.component.html',
   styleUrl: './project-list.component.css'
 })
@@ -17,23 +17,36 @@ export class ProjectListComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
-  constructor(private projectsService: ProjectsService) { }
+  constructor(
+    private projectsService: ProjectsService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
     this.loadProjects();
   }
 
   loadProjects(): void {
+    console.log('ProjectListComponent: Loading projects...');
     this.loading = true;
     this.error = null;
     this.projectsService.getProjects().subscribe({
       next: (projects) => {
-        this.projects = projects;
-        this.loading = false;
+        console.log('ProjectListComponent: loadProjects success', projects);
+        this.ngZone.run(() => {
+          this.projects = projects;
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to load projects';
-        this.loading = false;
+        console.error('ProjectListComponent: loadProjects failed', err);
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to load projects';
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
       }
     });
   }
@@ -45,10 +58,15 @@ export class ProjectListComponent implements OnInit {
 
     this.projectsService.deleteProject(id).subscribe({
       next: () => {
+        console.log('ProjectListComponent: deleteProject success', id);
         this.loadProjects();
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Failed to delete project.';
+        console.error('ProjectListComponent: deleteProject failed', err);
+        this.ngZone.run(() => {
+          this.error = err.error?.detail || 'Failed to delete project.';
+          this.cdr.detectChanges();
+        });
       }
     });
   }

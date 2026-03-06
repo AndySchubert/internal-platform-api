@@ -8,7 +8,8 @@ from fastapi.exceptions import RequestValidationError
 import time
 import logging
 
-from app.core.database import Base, engine
+from app.core.database import Base, engine, SessionLocal
+from app.core.seed import seed_db
 from app.core.middleware import CSRFMiddleware
 from app.api.v1.auth import router as auth_router
 from app.api.v1.projects import router as projects_router
@@ -40,6 +41,9 @@ async def lifespan(app: FastAPI):
                 connection.execute(text("SELECT 1"))
             Base.metadata.create_all(bind=engine)
             logger.info("Database connected and tables created successfully.")
+            
+            with SessionLocal() as db:
+                seed_db(db)
             break
         except OperationalError as e:
             if attempt < max_retries - 1:
@@ -61,7 +65,10 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=[
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
