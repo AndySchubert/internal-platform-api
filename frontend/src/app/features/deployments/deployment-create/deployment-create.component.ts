@@ -5,12 +5,12 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DeploymentsService } from '../deployments.service';
 import { EnvironmentsService } from '../../environments/environments.service';
 import { Environment } from '../../../shared/models/environment.model';
-import { HeaderComponent } from '../../../layout/header/header.component';
+
 
 @Component({
   selector: 'app-deployment-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HeaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './deployment-create.component.html',
   styleUrl: './deployment-create.component.css'
 })

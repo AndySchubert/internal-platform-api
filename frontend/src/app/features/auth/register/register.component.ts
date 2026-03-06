@@ -14,6 +14,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 export class RegisterComponent {
   registerForm: FormGroup;
   error: string | null = null;
+  successMessage: string | null = null;
   loading = false;
 
   constructor(
@@ -23,7 +24,7 @@ export class RegisterComponent {
   ) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]]
     }, {
       validators: this.passwordMatchValidator
@@ -48,24 +49,32 @@ export class RegisterComponent {
 
     this.loading = true;
     this.error = null;
+    this.successMessage = null;
 
     const { email, password } = this.registerForm.value;
     this.authService.register({ email, password }).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading = false;
-        // After successful registration, log in the user
-        this.authService.login({ username: email, password }).subscribe({
-          next: () => {
-            this.router.navigate(['/projects']);
-          },
-          error: (err) => {
-            this.error = err.error?.detail || 'Registration successful but login failed. Please try logging in.';
-          }
-        });
+        this.successMessage = res.detail || 'Success! Please check your email to verify your account.';
+        this.registerForm.reset();
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.detail || 'Registration failed. Please try again.';
+
+        // Safely extract the error message from the backend response
+        let errorMessage = 'Registration failed. Please try again.';
+        if (err.error && typeof err.error.detail === 'string') {
+          errorMessage = err.error.detail;
+        } else if (err.error && Array.isArray(err.error.detail)) {
+          errorMessage = err.error.detail[0]?.msg || errorMessage;
+        }
+
+        // Output specific validation errors to the form controls if possible
+        if (errorMessage.toLowerCase().includes('already registered')) {
+          this.registerForm.get('email')?.setErrors({ alreadyRegistered: true });
+        } else {
+          this.error = errorMessage;
+        }
       }
     });
   }

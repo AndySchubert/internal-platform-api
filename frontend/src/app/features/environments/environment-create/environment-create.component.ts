@@ -5,12 +5,12 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EnvironmentsService } from '../environments.service';
 import { ProjectsService } from '../../projects/projects.service';
 import { Project } from '../../../shared/models/project.model';
-import { HeaderComponent } from '../../../layout/header/header.component';
+
 
 @Component({
   selector: 'app-environment-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HeaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './environment-create.component.html',
   styleUrl: './environment-create.component.css'
 })

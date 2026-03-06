@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ProjectsService } from '../projects.service';
-import { HeaderComponent } from '../../../layout/header/header.component';
+
 
 @Component({
   selector: 'app-project-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, HeaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './project-create.component.html',
   styleUrl: './project-create.component.css'
 })

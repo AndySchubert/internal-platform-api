@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth/auth.service';
 import { User } from '../../shared/models/user.model';
 
@@ -13,12 +14,15 @@ import { User } from '../../shared/models/user.model';
 })
 export class HeaderComponent implements OnInit {
   currentUser: User | null = null;
+  private destroyRef = inject(DestroyRef);
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   ngOnInit(): void {
-    this.authService.currentUser$.subscribe(user => {
-      this.currentUser = user;
+    this.authService.currentUser$.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(user => {
+      this.currentUser = user ?? null;
     });
   }
 

@@ -11,7 +11,7 @@ from app.services import projects as projects_service
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
-@router.get("/", response_model=list[ProjectRead])
+@router.get("", response_model=list[ProjectRead])
 def list_projects(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -19,7 +19,7 @@ def list_projects(
     return projects_service.get_projects_for_user(db, current_user.id)
 
 
-@router.post("/", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
 def create_project(
     project_in: ProjectCreate,
     db: Session = Depends(get_db),

@@ -4,7 +4,7 @@ install:
 	npm install
 
 start:
-	npm start
+	CI=true npm start
 
 build:
 	npm run build

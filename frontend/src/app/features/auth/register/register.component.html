@@ -6,45 +6,36 @@
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
         <label for="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          formControlName="email"
-          class="form-control"
+        <input type="email" id="email" formControlName="email" class="form-control"
           [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
-          placeholder="you@example.com"
-        />
+          placeholder="you@example.com" />
         <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-message">
-          Please enter a valid email address
+          <span *ngIf="registerForm.get('email')?.hasError('alreadyRegistered')">Email is already registered. Please
+            login.</span>
+          <span *ngIf="!registerForm.get('email')?.hasError('alreadyRegistered')">Please enter a valid email
+            address</span>
         </div>
       </div>
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          formControlName="password"
-          class="form-control"
+        <input type="password" id="password" formControlName="password" class="form-control"
           [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
-          placeholder="At least 6 characters"
-        />
-        <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error-message">
-          Password must be at least 6 characters
+          placeholder="At least 8 characters" />
+        <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+          class="error-message">
+          Password must be at least 8 characters
         </div>
       </div>
 
       <div class="form-group">
         <label for="confirmPassword">Confirm Password</label>
-        <input
-          type="password"
-          id="confirmPassword"
-          formControlName="confirmPassword"
-          class="form-control"
+        <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-control"
           [class.error]="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched"
-          placeholder="Confirm your password"
-        />
-        <div *ngIf="registerForm.get('confirmPassword')?.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched" class="error-message">
+          placeholder="Confirm your password" />
+        <div
+          *ngIf="registerForm.get('confirmPassword')?.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched"
+          class="error-message">
           Passwords do not match
         </div>
       </div>
@@ -53,11 +44,13 @@
         {{ error }}
       </div>
 
-      <button
-        type="submit"
-        class="btn btn-primary"
-        [disabled]="registerForm.invalid || loading"
-      >
+      <div *ngIf="successMessage" class="alert alert-success"
+        style="background-color: #d4edda; color: #155724; padding: 12px; border-radius: 4px; margin-bottom: 16px; font-weight: 500;">
+        {{ successMessage }}
+      </div>
+
+      <button *ngIf="!successMessage" type="submit" class="btn btn-primary"
+        [disabled]="registerForm.invalid || loading">
         <span *ngIf="!loading">Create Account</span>
         <span *ngIf="loading">Creating account...</span>
       </button>

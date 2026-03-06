@@ -1,13 +1,14 @@
-# app/core/security.py
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import secrets
+import hashlib
 
 from jose import jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
@@ -30,3 +31,18 @@ def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> 
         algorithm=settings.jwt_algorithm,
     )
     return encoded_jwt
+
+
+def generate_random_token(length: int = 32) -> str:
+    """Generate a high-entropy random token for verifications and resets."""
+    return secrets.token_urlsafe(length)
+
+
+def hash_token(token: str) -> str:
+    """Consistently hash a generic token before storing in DB (to prevent DB leak abuse)."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def generate_session_id() -> str:
+    """Generate a highly secure, meaningless session identifier."""
+    return secrets.token_urlsafe(64)

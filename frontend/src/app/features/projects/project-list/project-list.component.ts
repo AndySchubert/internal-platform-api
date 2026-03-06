@@ -4,12 +4,11 @@ import { RouterModule } from '@angular/router';
 import { ProjectsService } from '../projects.service';
 import { Project } from '../../../shared/models/project.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
-import { HeaderComponent } from '../../../layout/header/header.component';
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, LoadingSpinnerComponent, HeaderComponent],
+  imports: [CommonModule, RouterModule, LoadingSpinnerComponent],
   templateUrl: './project-list.component.html',
   styleUrl: './project-list.component.css'
 })
@@ -18,7 +17,7 @@ export class ProjectListComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
-  constructor(private projectsService: ProjectsService) {}
+  constructor(private projectsService: ProjectsService) { }
 
   ngOnInit(): void {
     this.loadProjects();
@@ -49,7 +48,7 @@ export class ProjectListComponent implements OnInit {
         this.loadProjects();
       },
       error: (err) => {
-        alert(err.error?.detail || 'Failed to delete project');
+        this.error = err.error?.detail || 'Failed to delete project.';
       }
     });
   }

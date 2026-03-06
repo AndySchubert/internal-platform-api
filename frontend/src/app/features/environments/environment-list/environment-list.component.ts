@@ -7,14 +7,12 @@ import { Environment } from '../../../shared/models/environment.model';
 import { Project } from '../../../shared/models/project.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
-import { HeaderComponent } from '../../../layout/header/header.component';
-import { interval } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+
 
 @Component({
   selector: 'app-environment-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent, HeaderComponent],
+  imports: [CommonModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent],
   templateUrl: './environment-list.component.html',
   styleUrl: './environment-list.component.css'
 })
@@ -31,7 +29,7 @@ export class EnvironmentListComponent implements OnInit, OnDestroy {
     private router: Router,
     private environmentsService: EnvironmentsService,
     private projectsService: ProjectsService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.paramMap.get('projectId');
@@ -78,13 +76,10 @@ export class EnvironmentListComponent implements OnInit, OnDestroy {
 
   startPolling(): void {
     if (!this.projectId) return;
-    // Poll every 3 seconds to check for status updates
-    this.pollingSubscription = interval(3000).pipe(
-      switchMap(() => this.environmentsService.getEnvironments(this.projectId!))
-    ).subscribe({
+    this.pollingSubscription = this.environmentsService.pollEnvironments(this.projectId).subscribe({
       next: (environments) => {
         // Only update if statuses changed
-        const hasChanges = this.environments.some((env, index) => {
+        const hasChanges = this.environments.some((env) => {
           const newEnv = environments.find(e => e.id === env.id);
           return newEnv && newEnv.status !== env.status;
         });
@@ -108,7 +103,7 @@ export class EnvironmentListComponent implements OnInit, OnDestroy {
         this.loadEnvironments();
       },
       error: (err) => {
-        alert(err.error?.detail || 'Failed to delete environment');
+        this.error = err.error?.detail || 'Failed to delete environment.';
       }
     });
   }

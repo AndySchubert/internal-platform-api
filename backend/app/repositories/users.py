@@ -19,3 +19,13 @@ def create_user(db: Session, user: User) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+def get_user_by_verification_token_hash(db: Session, token_hash: str) -> Optional[User]:
+    return db.execute(select(User).where(User.verification_token_hash == token_hash)).scalar_one_or_none()
+
+
+def update_user(db: Session, user: User) -> User:
+    db.commit()
+    db.refresh(user)
+    return user

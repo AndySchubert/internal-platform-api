@@ -4,12 +4,12 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProjectsService } from '../projects.service';
 import { Project } from '../../../shared/models/project.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
-import { HeaderComponent } from '../../../layout/header/header.component';
+
 
 @Component({
   selector: 'app-project-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, LoadingSpinnerComponent, HeaderComponent],
+  imports: [CommonModule, RouterModule, LoadingSpinnerComponent],
   templateUrl: './project-detail.component.html',
   styleUrl: './project-detail.component.css'
 })
@@ -22,7 +22,7 @@ export class ProjectDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private projectsService: ProjectsService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const projectId = this.route.snapshot.paramMap.get('id');
