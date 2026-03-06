@@ -1,0 +1,14 @@
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      <a routerLink="/projects">envctl</a>
+    </div>
+    <nav class="nav" *ngIf="currentUser">
+      <a routerLink="/projects" routerLinkActive="active">Projects</a>
+    </nav>
+    <div class="user-menu" *ngIf="currentUser">
+      <span class="user-email">{{ currentUser.email }}</span>
+      <button class="btn-logout" (click)="logout()">Logout</button>
+    </div>
+  </div>
+</header>

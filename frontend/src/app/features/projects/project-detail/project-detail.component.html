@@ -1,0 +1,42 @@
+<app-header></app-header>
+
+<div class="container">
+  <div *ngIf="loading" class="loading-container">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+    <button (click)="loadProject(project!.id)" class="btn-retry">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error && project" class="project-detail">
+    <div class="project-header">
+      <div>
+        <h1>{{ project.name }}</h1>
+        <p class="project-meta">Created {{ project.created_at | date:'short' }}</p>
+      </div>
+      <a [routerLink]="['/projects', project.id, 'environments']" class="btn btn-primary">View Environments</a>
+    </div>
+
+    <div class="project-info">
+      <div class="info-section" *ngIf="project.description">
+        <h2>Description</h2>
+        <p>{{ project.description }}</p>
+      </div>
+
+      <div class="info-section" *ngIf="project.repo_url">
+        <h2>Repository</h2>
+        <a [href]="project.repo_url" target="_blank" rel="noopener noreferrer">{{ project.repo_url }}</a>
+      </div>
+
+      <div class="info-section">
+        <h2>Quick Actions</h2>
+        <div class="actions">
+          <a [routerLink]="['/projects', project.id, 'environments']" class="btn-action">Manage Environments</a>
+          <a [routerLink]="['/projects']" class="btn-action-secondary">Back to Projects</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

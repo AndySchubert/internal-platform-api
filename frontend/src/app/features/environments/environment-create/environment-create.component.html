@@ -1,0 +1,85 @@
+<app-header></app-header>
+
+<div class="container">
+  <nav class="breadcrumb">
+    <a routerLink="/projects">Projects</a>
+    <span>/</span>
+    <a [routerLink]="['/projects', projectId]" *ngIf="project">{{ project.name }}</a>
+    <span>/</span>
+    <a [routerLink]="['/projects', projectId, 'environments']">Environments</a>
+    <span>/</span>
+    <span>New</span>
+  </nav>
+
+  <h1>Create Environment</h1>
+
+  <form [formGroup]="environmentForm" (ngSubmit)="onSubmit()" class="environment-form">
+    <div class="form-group">
+      <label for="name">Environment Name *</label>
+      <input
+        type="text"
+        id="name"
+        formControlName="name"
+        class="form-control"
+        [class.error]="environmentForm.get('name')?.invalid && environmentForm.get('name')?.touched"
+        placeholder="preview-pr-123"
+      />
+      <div *ngIf="environmentForm.get('name')?.invalid && environmentForm.get('name')?.touched" class="error-message">
+        Environment name is required
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="type">Type *</label>
+      <select
+        id="type"
+        formControlName="type"
+        class="form-control"
+      >
+        <option value="persistent">Persistent</option>
+        <option value="ephemeral">Ephemeral</option>
+      </select>
+      <small class="form-hint">Ephemeral environments expire after a set time</small>
+    </div>
+
+    <div class="form-group" *ngIf="showTtl">
+      <label for="ttl_hours">TTL (Hours) *</label>
+      <input
+        type="number"
+        id="ttl_hours"
+        formControlName="ttl_hours"
+        class="form-control"
+        [class.error]="environmentForm.get('ttl_hours')?.invalid && environmentForm.get('ttl_hours')?.touched"
+        min="1"
+        placeholder="24"
+      />
+      <div *ngIf="environmentForm.get('ttl_hours')?.invalid && environmentForm.get('ttl_hours')?.touched" class="error-message">
+        TTL must be at least 1 hour
+      </div>
+      <small class="form-hint">How many hours until this ephemeral environment expires</small>
+    </div>
+
+    <div *ngIf="error" class="alert alert-error">
+      {{ error }}
+    </div>
+
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="cancel()"
+        [disabled]="loading"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="environmentForm.invalid || loading"
+      >
+        <span *ngIf="!loading">Create Environment</span>
+        <span *ngIf="loading">Creating...</span>
+      </button>
+    </div>
+  </form>
+</div>

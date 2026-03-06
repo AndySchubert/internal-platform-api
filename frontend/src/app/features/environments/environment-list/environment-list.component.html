@@ -1,0 +1,66 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="header-section">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/projects">Projects</a>
+        <span>/</span>
+        <span *ngIf="project">{{ project.name }}</span>
+        <span>/</span>
+        <span>Environments</span>
+      </nav>
+      <h1>Environments</h1>
+      <p class="subtitle" *ngIf="project">Manage environments for {{ project.name }}</p>
+    </div>
+    <a [routerLink]="['/projects', projectId, 'environments', 'new']" class="btn btn-primary" *ngIf="projectId">New Environment</a>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+    <button (click)="loadEnvironments()" class="btn-retry">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <div *ngIf="environments.length === 0" class="empty-state">
+      <p>No environments yet. Create your first environment to get started!</p>
+    </div>
+
+    <div class="environments-grid" *ngIf="environments.length > 0">
+      <div class="environment-card" *ngFor="let env of environments">
+        <div class="environment-header">
+          <div>
+            <h3>{{ env.name }}</h3>
+            <app-status-badge [status]="env.status"></app-status-badge>
+          </div>
+          <button class="btn-delete" (click)="deleteEnvironment(env.id)" title="Delete environment">×</button>
+        </div>
+        <div class="environment-info">
+          <div class="info-row">
+            <span class="label">Type:</span>
+            <span class="value">{{ env.type }}</span>
+          </div>
+          <div class="info-row" *ngIf="env.base_url">
+            <span class="label">URL:</span>
+            <a [href]="env.base_url" target="_blank" rel="noopener noreferrer" class="value">{{ env.base_url }}</a>
+          </div>
+          <div class="info-row" *ngIf="env.expires_at">
+            <span class="label">Expires:</span>
+            <span class="value">{{ env.expires_at | date:'short' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Created:</span>
+            <span class="value">{{ env.created_at | date:'short' }}</span>
+          </div>
+        </div>
+        <div class="environment-footer">
+          <a [routerLink]="['/environments', env.id, 'deployments']" class="btn-link">View Deployments →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,60 @@
+<app-header></app-header>
+
+<div class="container">
+  <nav class="breadcrumb">
+    <a routerLink="/projects">Projects</a>
+    <span>/</span>
+    <span *ngIf="environment">Environment: {{ environment.name }}</span>
+    <span>/</span>
+    <a [routerLink]="['/environments', environmentId, 'deployments']">Deployments</a>
+    <span>/</span>
+    <span>New</span>
+  </nav>
+
+  <h1>Create Deployment</h1>
+
+  <div *ngIf="environment && environment.status !== 'running'" class="alert alert-warning">
+    Environment is not ready (status: {{ environment.status }}). Only running environments can receive deployments.
+  </div>
+
+  <form [formGroup]="deploymentForm" (ngSubmit)="onSubmit()" class="deployment-form">
+    <div class="form-group">
+      <label for="version">Version *</label>
+      <input
+        type="text"
+        id="version"
+        formControlName="version"
+        class="form-control"
+        [class.error]="deploymentForm.get('version')?.invalid && deploymentForm.get('version')?.touched"
+        placeholder="sha-1234567 or v1.0.0"
+      />
+      <div *ngIf="deploymentForm.get('version')?.invalid && deploymentForm.get('version')?.touched" class="error-message">
+        Version is required
+      </div>
+      <small class="form-hint">Enter a git SHA, tag, or version identifier</small>
+    </div>
+
+    <div *ngIf="error" class="alert alert-error">
+      {{ error }}
+    </div>
+
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="cancel()"
+        [disabled]="loading"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="deploymentForm.invalid || loading || (environment && environment.status !== 'running')"
+      >
+        <span *ngIf="!loading">Create Deployment</span>
+        <span *ngIf="loading">Creating...</span>
+      </button>
+    </div>
+  </form>
+</div>

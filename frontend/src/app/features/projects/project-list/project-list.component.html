@@ -1,0 +1,37 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="header-section">
+    <h1>Projects</h1>
+    <a routerLink="/projects/new" class="btn btn-primary">New Project</a>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+    <button (click)="loadProjects()" class="btn-retry">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <div *ngIf="projects.length === 0" class="empty-state">
+      <p>No projects yet. Create your first project to get started!</p>
+    </div>
+
+    <div class="projects-grid" *ngIf="projects.length > 0">
+      <div class="project-card" *ngFor="let project of projects">
+        <div class="project-header">
+          <h3><a [routerLink]="['/projects', project.id]">{{ project.name }}</a></h3>
+          <button class="btn-delete" (click)="deleteProject(project.id)" title="Delete project">×</button>
+        </div>
+        <p class="project-description" *ngIf="project.description">{{ project.description }}</p>
+        <div class="project-footer">
+          <span class="project-date">Created {{ project.created_at | date:'short' }}</span>
+          <a [routerLink]="['/projects', project.id, 'environments']" class="btn-link">View Environments →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

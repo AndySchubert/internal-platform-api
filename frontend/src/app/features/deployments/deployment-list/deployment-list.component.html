@@ -1,0 +1,54 @@
+<app-header></app-header>
+
+<div class="container">
+  <div class="header-section">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/projects">Projects</a>
+        <span>/</span>
+        <span *ngIf="environment">Environment: {{ environment.name }}</span>
+        <span>/</span>
+        <span>Deployments</span>
+      </nav>
+      <h1>Deployments</h1>
+      <p class="subtitle" *ngIf="environment">Deployments for {{ environment.name }}</p>
+    </div>
+    <a [routerLink]="['/environments', environmentId, 'deployments', 'new']" class="btn btn-primary" *ngIf="environmentId">New Deployment</a>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+    <button (click)="loadDeployments()" class="btn-retry">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <div *ngIf="deployments.length === 0" class="empty-state">
+      <p>No deployments yet. Create your first deployment to get started!</p>
+    </div>
+
+    <div class="deployments-list" *ngIf="deployments.length > 0">
+      <div class="deployment-card" *ngFor="let deployment of deployments">
+        <div class="deployment-header">
+          <div>
+            <h3>Version: {{ deployment.version }}</h3>
+            <app-status-badge [status]="deployment.status"></app-status-badge>
+          </div>
+        </div>
+        <div class="deployment-info">
+          <div class="info-row">
+            <span class="label">Created:</span>
+            <span class="value">{{ deployment.created_at | date:'short' }}</span>
+          </div>
+          <div class="info-row" *ngIf="deployment.logs_url">
+            <span class="label">Logs:</span>
+            <a [href]="deployment.logs_url" target="_blank" rel="noopener noreferrer" class="value">View Logs</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
