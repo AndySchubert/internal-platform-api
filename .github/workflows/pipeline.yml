@@ -48,24 +48,31 @@ jobs:
       - name: Test App (Backend & Frontend)
         shell: bash
         run: |
-          # Backend Tests
+          # Backend Tests with Coverage
           cd backend
           curl -sSL https://install.python-poetry.org | python3 -
           export PATH="/home/runner/.local/bin:$PATH"
           poetry install
-          poetry run pytest &
+          poetry run pytest --cov=app --cov-report=xml:../backend/coverage.xml &
           B_PID=$!
           
-          # Frontend Tests
+          # Frontend Tests with Coverage
           cd ../frontend
           npm install
-          # Skip frontend tests if no browser available, but keeping the command for structure
-          npm test -- --no-watch --no-progress --browsers=ChromeHeadless || echo "Frontend tests skipped (browser issues)" &
+          # ng test --code-coverage generates reports in coverage/envctl-ui/
+          npm test -- --no-watch --no-progress --browsers=ChromeHeadless --code-coverage || echo "Frontend tests skipped" &
           F_PID=$!
           
           wait $B_PID $F_PID
 
-      # 3. Build App Phase (Parallel inside)
+      # 3. Sonar Scan Phase
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # 4. Build App Phase (Parallel inside)
       - name: Build App (Frontend Assets)
         shell: bash
         run: |
