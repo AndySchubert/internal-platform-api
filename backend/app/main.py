@@ -10,6 +10,7 @@ import logging
 
 from app.core.config import settings
 from app.core.database import Base, engine, SessionLocal
+from app.core.migrations import ensure_user_columns
 from app.core.seed import seed_db
 from app.core.middleware import CSRFMiddleware
 from app.api.v1.auth import router as auth_router
@@ -41,7 +42,8 @@ async def lifespan(app: FastAPI):
             with engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
             Base.metadata.create_all(bind=engine)
-            logger.info("Database connected and tables created successfully.")
+            ensure_user_columns(engine)
+            logger.info("Database connected and tables created/updated successfully.")
 
             with SessionLocal() as db:
                 seed_db(db)
