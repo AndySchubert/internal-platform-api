@@ -66,6 +66,7 @@ envctl.db
 crash.log
 crash.*.log
 secrets.tfvars
+
 # AI
 .agents/
 AI_CONTEXT.md
