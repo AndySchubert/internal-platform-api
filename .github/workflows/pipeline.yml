@@ -18,21 +18,38 @@ jobs:
       python-version: "3.12"
       working-directory: "backend"
 
-  build-image:
+  build-backend:
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
     uses: null-pointer-sch/cicd-templates/.github/workflows/docker-build-push.yml@main
     with:
-      image-name: "internal-platform-api"
+      image-name: "internal-platform-api-backend"
       project-id: "internal-platform-api"
       repo-name: "internal-platform-api-eu"
       region: "europe-west1"
+      dockerfile-path: "backend/Dockerfile"
+      docker-context: "backend"
+    secrets:
+      GCP_WIF_PROVIDER: "projects/1062901461072/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+      GCP_SERVICE_ACCOUNT: "github-actions-deploy@internal-platform-api.iam.gserviceaccount.com"
+
+  build-frontend:
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
+    uses: null-pointer-sch/cicd-templates/.github/workflows/docker-build-push.yml@main
+    with:
+      image-name: "internal-platform-api-frontend"
+      project-id: "internal-platform-api"
+      repo-name: "internal-platform-api-eu"
+      region: "europe-west1"
+      dockerfile-path: "frontend/Dockerfile"
+      docker-context: "frontend"
     secrets:
       GCP_WIF_PROVIDER: "projects/1062901461072/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
       GCP_SERVICE_ACCOUNT: "github-actions-deploy@internal-platform-api.iam.gserviceaccount.com"
 
   deploy-infra:
-    needs: build-image
+    needs: [build-backend, build-frontend]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
     uses: null-pointer-sch/cicd-templates/.github/workflows/terraform-deploy.yml@main
     with:

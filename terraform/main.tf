@@ -27,17 +27,17 @@ import {
 }
 
 import {
-  to = module.api.google_cloud_run_v2_service.service
-  id = "projects/internal-platform-api/locations/europe-west1/services/internal-platform-api"
+  to = module.backend.google_cloud_run_v2_service.service
+  id = "projects/internal-platform-api/locations/europe-west1/services/internal-platform-api-backend"
 }
 
-# Cloud Run via GitHub Module
-module "api" {
+# Backend Cloud Run via GitHub Module
+module "backend" {
   source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-cloud-run?ref=v1.0.0"
 
   region         = var.region
-  service_name   = "internal-platform-api"
-  image          = "${var.region}-docker.pkg.dev/${var.project_id}/${module.artifact_repo.repository_id}/internal-platform-api:${var.image_tag}"
+  service_name   = "internal-platform-api-backend"
+  image          = "${var.region}-docker.pkg.dev/${var.project_id}/${module.artifact_repo.repository_id}/internal-platform-api-backend:${var.image_tag}"
   container_port = 8000
   is_public      = true
 
@@ -51,6 +51,26 @@ module "api" {
   max_instance_count = 10
 }
 
-output "cloud_run_url" {
-  value = module.api.service_url
+# Frontend Cloud Run via GitHub Module
+module "frontend" {
+  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-cloud-run?ref=v1.0.0"
+
+  region         = var.region
+  service_name   = "internal-platform-api-frontend"
+  image          = "${var.region}-docker.pkg.dev/${var.project_id}/${module.artifact_repo.repository_id}/internal-platform-api-frontend:${var.image_tag}"
+  container_port = 80
+  is_public      = true
+
+  cpu_limit          = "0.5"
+  memory_limit       = "256Mi"
+  min_instance_count = 0
+  max_instance_count = 5
+}
+
+output "backend_url" {
+  value = module.backend.service_url
+}
+
+output "frontend_url" {
+  value = module.frontend.service_url
 }
