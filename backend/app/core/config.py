@@ -10,6 +10,7 @@ class Settings(BaseModel):
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "change-me-in-prod")
     jwt_algorithm: str = "HS256"
     jwt_access_token_expires_minutes: int = 60
+    frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:4200")
 
     @property
     def is_development(self) -> bool:

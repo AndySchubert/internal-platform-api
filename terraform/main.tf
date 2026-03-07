@@ -37,6 +37,7 @@ module "backend" {
 
   env_vars = {
     DATABASE_URL = var.database_url
+    FRONTEND_URL = module.frontend.service_url
   }
 
   # Using defaults for CPU (1) and Memory (512Mi)

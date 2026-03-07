@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 import time
 import logging
 
+from app.core.config import settings
 from app.core.database import Base, engine, SessionLocal
 from app.core.seed import seed_db
 from app.core.middleware import CSRFMiddleware
@@ -66,6 +67,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        settings.frontend_url,
         "http://localhost:4200",
         "http://127.0.0.1:4200",
     ],
