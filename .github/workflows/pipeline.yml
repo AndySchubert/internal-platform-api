@@ -1,4 +1,4 @@
-# Optimized Pipeline using Parallel Modular Actions
+# Optimized Pipeline: Single Job, Decoupled Parallel Phases
 name: Pipeline
 
 on:
@@ -26,23 +26,14 @@ jobs:
       python-version: "3.12"
       working-directory: "backend"
 
-  build-and-publish:
+  deploy:
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
-    strategy:
-      matrix:
-        include:
-          - name: backend
-            context: backend
-            dockerfile: backend/Dockerfile
-          - name: frontend
-            context: frontend
-            dockerfile: frontend/Dockerfile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Inherited Auth from top-level env
+      # 1. Shared Auth (Inherited by all steps)
       - name: Auth to GCP
         uses: null-pointer-sch/cicd-templates/actions/gcp-auth@main
         with:
@@ -50,30 +41,45 @@ jobs:
           service-account: ${{ env.GCP_SERVICE_ACCOUNT }}
           region: ${{ env.REGION }}
 
-      # Decoupled Build and Publish
-      - name: Build ${{ matrix.name }}
-        uses: null-pointer-sch/cicd-templates/actions/docker-build@main
-        with:
-          image-name: "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}/internal-platform-api-${{ matrix.name }}:${{ github.sha }}"
-          dockerfile-path: ${{ matrix.dockerfile }}
-          docker-context: ${{ matrix.context }}
+      # 2. Parallel Builds (Decoupled Stage)
+      - name: Build Backend & Frontend (Parallel)
+        shell: bash
+        run: |
+          IMAGE_BASE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}"
+          
+          echo "Building Backend..."
+          docker build -f backend/Dockerfile -t "${IMAGE_BASE}/internal-platform-api-backend:${{ github.sha }}" backend &
+          B_PID=$!
+          
+          echo "Building Frontend..."
+          docker build -f frontend/Dockerfile -t "${IMAGE_BASE}/internal-platform-api-frontend:${{ github.sha }}" frontend &
+          F_PID=$!
+          
+          wait $B_PID $F_PID
 
-      - name: Publish ${{ matrix.name }}
-        uses: null-pointer-sch/cicd-templates/actions/docker-push@main
-        with:
-          image-name: "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}/internal-platform-api-${{ matrix.name }}:${{ github.sha }}"
+      # 3. Parallel Pushes (Decoupled Stage)
+      - name: Push Backend & Frontend (Parallel)
+        shell: bash
+        run: |
+          IMAGE_BASE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}"
+          
+          echo "Pushing Backend..."
+          docker push "${IMAGE_BASE}/internal-platform-api-backend:${{ github.sha }}" &
+          B_PID=$!
+          
+          echo "Pushing Frontend..."
+          docker push "${IMAGE_BASE}/internal-platform-api-frontend:${{ github.sha }}" &
+          F_PID=$!
+          
+          wait $B_PID $F_PID
 
-  deploy-image:
-    needs: build-and-publish
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
-    uses: null-pointer-sch/cicd-templates/.github/workflows/terraform-deploy.yml@v1.5.0
-    with:
-      project-id: "internal-platform-api"
-      region: "europe-west1"
-      artifact-repo-id: "internal-platform-api"
-      image-tag: ${{ github.sha }}
-      working-directory: "terraform"
-    secrets:
-      GCP_WIF_PROVIDER: "projects/1062901461072/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
-      GCP_SERVICE_ACCOUNT: "github-actions-deploy@internal-platform-api.iam.gserviceaccount.com"
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # 4. Final Deploy
+      - name: Deploy Image
+        uses: null-pointer-sch/cicd-templates/actions/terraform-deploy@main
+        with:
+          project-id: ${{ env.PROJECT_ID }}
+          region: ${{ env.REGION }}
+          artifact-repo-id: ${{ env.ARTIFACT_REPO_ID }}
+          image-tag: ${{ github.sha }}
+          working-directory: "terraform"
+          database-url: ${{ secrets.DATABASE_URL }}
