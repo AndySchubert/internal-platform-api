@@ -164,25 +164,19 @@ curl -s   -H "Authorization: Bearer $TOKEN"   http://127.0.0.1:8000/api/v1/deplo
 
 ---
 
-## 📁 Folder structure
+## 📁 Folder Structure
 
 ```
-app/
- ├── api/v1/
- │    ├── auth.py
- │    ├── projects.py
- │    ├── environments.py
- │    └── deployments.py
- ├── core/
- │    ├── database.py
- │    └── security.py
- ├── models/
- │    ├── user.py
- │    ├── project.py
- │    ├── environment.py
- │    └── deployment.py
- ├── schemas/
- └── main.py
+.
+├── backend/            # FastAPI Backend
+│   ├── app/            # Core logic
+│   ├── tests/          # Pytest suite
+│   └── Dockerfile
+├── frontend/           # Angular Frontend
+│   ├── src/            # App components/services
+│   └── Dockerfile
+├── terraform/          # Infrastructure as Code
+└── cicd-templates/     # Remote git modules (Central Repo)
 ```
 
 ---
