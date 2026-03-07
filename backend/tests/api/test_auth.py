@@ -27,7 +27,7 @@ def auth_headers(client, email="test@example.com", password="testpassword123"):
     client.cookies.clear()
 
     register_user(client, email, password)
-    
+
     # Manually verify the user so login succeeds
     db_gen = app.dependency_overrides.get(get_db, get_db)()
     db = next(db_gen)
@@ -81,9 +81,9 @@ def test_login_success(client):
     from app.core.database import get_db
     from app.main import app
     from app.repositories.users import get_user_by_email
-    
+
     register_user(client)
-    
+
     db_gen = app.dependency_overrides.get(get_db, get_db)()
     db = next(db_gen)
     user = get_user_by_email(db, "test@example.com")
