@@ -16,6 +16,7 @@ jobs:
     uses: null-pointer-sch/cicd-templates/.github/workflows/python-ci.yml@main
     with:
       python-version: "3.12"
+      working-directory: "backend"
 
   build-image:
     needs: test
