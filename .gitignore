@@ -68,4 +68,4 @@ crash.*.log
 secrets.tfvars
 # AI
 .agents/
-! .agents/AI_CONTEXT.md
+AI_CONTEXT.md
