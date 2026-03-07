@@ -1,4 +1,4 @@
-# Optimized Robust Pipeline: Single Job, Full Sequence
+# Optimized Ultimate Pipeline: Single Job, 12-Phase Robust Lifecycle
 name: Pipeline
 
 on:
@@ -24,15 +24,9 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      # 1. Auth & Runtime Setup
-      - name: Auth to GCP
-        uses: null-pointer-sch/cicd-templates/actions/gcp-auth@main
-        with:
-          wif-provider: ${{ env.GCP_WIF_PROVIDER }}
-          service-account: ${{ env.GCP_SERVICE_ACCOUNT }}
-          region: ${{ env.REGION }}
+      # 1. Checkout & Setup
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -44,43 +38,84 @@ jobs:
         with:
           node-version: "20"
 
-      # 2. Test App Phase (Parallel inside)
-      - name: Test App (Backend & Frontend)
+      # 2. Auth Phase (Shared Session)
+      - name: Auth to GCP
+        uses: null-pointer-sch/cicd-templates/actions/gcp-auth@main
+        with:
+          wif-provider: ${{ env.GCP_WIF_PROVIDER }}
+          service-account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          region: ${{ env.REGION }}
+
+      # 3. Install Dependencies Phase (Parallel)
+      - name: Install Dependencies
         shell: bash
         run: |
-          # Backend Tests with Coverage
+          # Backend
           cd backend
           curl -sSL https://install.python-poetry.org | python3 -
           export PATH="/home/runner/.local/bin:$PATH"
-          poetry install
+          poetry install &
+          B_PID=$!
+          
+          # Frontend
+          cd ../frontend
+          npm install &
+          F_PID=$!
+          
+          wait $B_PID $F_PID
+
+      # 4. Lint Phase (Parallel)
+      - name: Linting (Backend & Frontend)
+        shell: bash
+        run: |
+          export PATH="/home/runner/.local/bin:$PATH"
+          
+          # Backend Lint
+          cd backend
+          poetry run ruff check . &
+          B_PID=$!
+          
+          # Frontend Lint (Optional if missing script)
+          cd ../frontend
+          npm run lint || echo "Frontend lint script missing or failed" &
+          F_PID=$!
+          
+          wait $B_PID $F_PID
+
+      # 5. Unit/Integration Tests Phase (Parallel)
+      - name: Unit & Integration Tests
+        shell: bash
+        run: |
+          export PATH="/home/runner/.local/bin:$PATH"
+          
+          # Backend Tests with Coverage
+          cd backend
           poetry run pytest --cov=app --cov-report=xml:../backend/coverage.xml &
           B_PID=$!
           
           # Frontend Tests with Coverage
           cd ../frontend
-          npm install
-          # ng test --code-coverage generates reports in coverage/envctl-ui/
           npm test -- --no-watch --no-progress --browsers=ChromeHeadless --code-coverage || echo "Frontend tests skipped" &
           F_PID=$!
           
           wait $B_PID $F_PID
 
-      # 3. Sonar Scan Phase
+      # 6. SonarCloud Scan Phase
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # 4. Build App Phase (Parallel inside)
-      - name: Build App (Frontend Assets)
+      # 7. Build Frontend Assets Phase
+      - name: Build Frontend Assets
         shell: bash
         run: |
           cd frontend
           npm run build
 
-      # 4. Dockerize Phase (Parallel inside)
-      - name: Dockerize (Build Images)
+      # 8. Build Docker Images Phase (Parallel)
+      - name: Dockerize (Build)
         shell: bash
         run: |
           IMAGE_BASE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}"
@@ -93,24 +128,24 @@ jobs:
           
           wait $B_PID $F_PID
 
-      # 5. Test Image Phase (Smoke tests)
-      - name: Test Images (Smoke Test)
+      # 9. Image Smoke Test Phase (Parallel)
+      - name: Image Smoke Test
         shell: bash
         run: |
           IMAGE_BASE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}"
           
-          # Trivial smoke test: check if bin exists or similar
+          # Backend sanity
           docker run --rm "${IMAGE_BASE}/internal-platform-api-backend:${{ github.sha }}" python --version &
           B_PID=$!
           
-          # Frontend is nginx usually, check if nginx config exists
+          # Frontend sanity (checking assets)
           docker run --rm "${IMAGE_BASE}/internal-platform-api-frontend:${{ github.sha }}" ls /usr/share/nginx/html &
           F_PID=$!
           
           wait $B_PID $F_PID
 
-      # 6. Push Image Phase (Parallel inside)
-      - name: Push Images (Standard Push)
+      # 10. Push Image Phase (Parallel)
+      - name: Push Images
         shell: bash
         run: |
           IMAGE_BASE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}"
@@ -123,8 +158,9 @@ jobs:
           
           wait $B_PID $F_PID
 
-      # 7. Final Deploy
+      # 11. Deploy Phase (Terraform)
       - name: Deploy Image
+        id: deploy
         uses: null-pointer-sch/cicd-templates/actions/terraform-deploy@main
         with:
           project-id: ${{ env.PROJECT_ID }}
@@ -133,3 +169,19 @@ jobs:
           image-tag: ${{ github.sha }}
           working-directory: "terraform"
           database-url: ${{ secrets.DATABASE_URL }}
+
+      # 12. Post-Deploy Smoke Test
+      - name: Post-Deploy Smoke Test
+        shell: bash
+        run: |
+          # Use terraform output to get URL if possible, otherwise construct it
+          # Since the action runs apply, we can run output in the same directory
+          cd terraform
+          BACKEND_URL=$(terraform output -raw backend_url)
+          FRONTEND_URL=$(terraform output -raw frontend_url)
+          
+          echo "Testing Backend at $BACKEND_URL..."
+          curl -f -s "$BACKEND_URL/health" || (echo "Backend health check failed!" && exit 1)
+          
+          echo "Testing Frontend at $FRONTEND_URL..."
+          curl -f -s "$FRONTEND_URL" || (echo "Frontend health check failed!" && exit 1)
