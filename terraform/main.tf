@@ -14,7 +14,7 @@ provider "google" {
 
 # Artifact Registry via GitHub Module
 module "artifact_repo" {
-  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-artifact-registry?ref=v1.1.0"
+  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-artifact-registry?ref=main"
 
   region        = var.region
   repository_id = var.artifact_repo_id
@@ -27,7 +27,7 @@ module "artifact_repo" {
 
 # Backend Cloud Run via GitHub Module
 module "backend" {
-  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-cloud-run?ref=v1.0.0"
+  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-cloud-run?ref=main"
 
   region         = var.region
   service_name   = "internal-platform-api-backend"
@@ -39,15 +39,14 @@ module "backend" {
     DATABASE_URL = var.database_url
   }
 
-  cpu_limit          = "1"
-  memory_limit       = "512Mi"
+  # Using defaults for CPU (1) and Memory (512Mi)
   min_instance_count = 0
   max_instance_count = 10
 }
 
 # Frontend Cloud Run via GitHub Module
 module "frontend" {
-  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-cloud-run?ref=v1.0.0"
+  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-cloud-run?ref=main"
 
   region         = var.region
   service_name   = "internal-platform-api-frontend"
@@ -55,8 +54,7 @@ module "frontend" {
   container_port = 80
   is_public      = true
 
-  cpu_limit          = "1"
-  memory_limit       = "256Mi"
+  # Using defaults for CPU (1) and Memory (512Mi)
   min_instance_count = 0
   max_instance_count = 5
 }
