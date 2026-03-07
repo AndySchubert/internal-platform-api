@@ -26,6 +26,7 @@ def create_project(
     current_user: User = Depends(get_current_user),
 ):
     import logging
+
     logger = logging.getLogger("envctl")
     logger.info(f"Creating project for user {current_user.id}: {project_in}")
     return projects_service.create_project_for_user(db, project_in, current_user.id)

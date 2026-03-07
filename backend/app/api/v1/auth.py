@@ -19,28 +19,39 @@ def get_current_user(
 ) -> User:
     session_id = request.cookies.get("envctl-session")
     if not session_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+        )
 
     user = auth_service.get_current_user_from_session_id(db, session_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
-        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session"
+        )
+
     return user
+
 
 class VerifyTokenRequest(BaseModel):
     token: str
 
+
 @router.post("/register", status_code=status.HTTP_202_ACCEPTED)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     auth_service.register_user(db, user_in)
-    return {"detail": "If the email can be registered, a verification link has been sent."}
+    return {
+        "detail": "If the email can be registered, a verification link has been sent."
+    }
 
 
 @router.post("/verify-email")
 def verify_email(req: VerifyTokenRequest, db: Session = Depends(get_db)):
     success = auth_service.verify_email_token(db, req.token)
     if not success:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token.",
+        )
     return {"detail": "Email successfully verified."}
 
 
@@ -50,7 +61,9 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    user, session_id = auth_service.authenticate_user(db, form_data.username, form_data.password)
+    user, session_id = auth_service.authenticate_user(
+        db, form_data.username, form_data.password
+    )
     if not user or not session_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -62,22 +75,22 @@ def login(
         key="envctl-session",
         value=session_id,
         httponly=True,
-        secure=False,    # Explicitly False for local plain HTTP
+        secure=False,  # Explicitly False for local plain HTTP
         samesite="lax",
-        path="/"
+        path="/",
     )
-    
+
     # Set CSRF Token Cookie (Angular looks for XSRF-TOKEN by default and replicates it to header X-XSRF-TOKEN)
     csrf_token = generate_random_token()
     response.set_cookie(
         key="XSRF-TOKEN",
         value=csrf_token,
         httponly=False,  # MUST be False so Angular JS can read it
-        secure=False,     # Explicitly False for local plain HTTP
+        secure=False,  # Explicitly False for local plain HTTP
         samesite="lax",
-        path="/"
+        path="/",
     )
-    
+
     return {"detail": "Successfully logged in"}
 
 
@@ -86,7 +99,7 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
     session_id = request.cookies.get("envctl-session")
     if session_id:
         auth_service.revoke_session(db, session_id)
-        
+
     response.delete_cookie(key="envctl-session", path="/")
     response.delete_cookie(key="XSRF-TOKEN", path="/")
     return {"detail": "Successfully logged out"}

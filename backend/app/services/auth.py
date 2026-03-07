@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import InvalidOperationException
 from app.core.security import (
-    hash_password, verify_password,
-    generate_random_token, hash_token,
-    generate_session_id
+    hash_password,
+    verify_password,
+    generate_random_token,
+    hash_token,
+    generate_session_id,
 )
 from app.models.user import User
 from app.models.session import Session as SessionModel
@@ -25,18 +26,17 @@ def ensure_utc(dt: datetime | None) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
-
 def register_user(db: Session, user_in: UserCreate) -> None:
     """
     Register a user. If they already exist, we silently do nothing or resend email.
     To prevent enumeration, we always return generic success from the API.
     """
     existing = users_repo.get_user_by_email(db, user_in.email)
-    
+
     raw_token = generate_random_token()
     token_hash = hash_token(raw_token)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-    
+
     if existing:
         # If user exists but is not verified, we can resend the email.
         if not existing.is_verified:
@@ -46,8 +46,11 @@ def register_user(db: Session, user_in: UserCreate) -> None:
             send_verification_email(existing.email, raw_token)
         # If already verified, we do nothing to prevent enumeration
         import logging
+
         logger = logging.getLogger("envctl")
-        logger.info(f"Account {existing.email} is already verified. Generic response returned, no email sent.")
+        logger.info(
+            f"Account {existing.email} is already verified. Generic response returned, no email sent."
+        )
         return
 
     # New user
@@ -56,7 +59,7 @@ def register_user(db: Session, user_in: UserCreate) -> None:
         password_hash=hash_password(user_in.password),
         is_verified=False,
         verification_token_hash=token_hash,
-        verification_token_expires_at=expires_at
+        verification_token_expires_at=expires_at,
     )
     users_repo.create_user(db, user)
     send_verification_email(user.email, raw_token)
@@ -68,10 +71,10 @@ def verify_email_token(db: Session, token: str) -> bool:
     """
     token_hash = hash_token(token)
     user = users_repo.get_user_by_verification_token_hash(db, token_hash)
-    
+
     if not user:
         return False
-        
+
     expires_at = ensure_utc(user.verification_token_expires_at)
     if not expires_at or expires_at < datetime.now(timezone.utc):
         return False
@@ -83,20 +86,22 @@ def verify_email_token(db: Session, token: str) -> bool:
     return True
 
 
-def authenticate_user(db: Session, email: str, password: str) -> tuple[User | None, str | None]:
+def authenticate_user(
+    db: Session, email: str, password: str
+) -> tuple[User | None, str | None]:
     """
     Authenticate user, enforce lockouts, return (User, raw_session_id) if successful.
     """
     user = users_repo.get_user_by_email(db, email)
-    
+
     if not user:
         return None, None
-        
+
     # Check Lockout
     lockout_until = ensure_utc(user.lockout_until)
     if lockout_until and lockout_until > datetime.now(timezone.utc):
         return None, None
-        
+
     # Check Password
     if not verify_password(password, user.password_hash):
         # Apply Lockout Policy
@@ -106,13 +111,15 @@ def authenticate_user(db: Session, email: str, password: str) -> tuple[User | No
             user.lockout_until = datetime.now(timezone.utc) + timedelta(minutes=15)
         users_repo.update_user(db, user)
         return None, None
-        
+
     # Check Verified Status (Must be verified to login)
     if not user.is_verified:
         # Securely resend verification email on correct password for unverified account
         raw_token = generate_random_token()
         user.verification_token_hash = hash_token(raw_token)
-        user.verification_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+        user.verification_token_expires_at = datetime.now(timezone.utc) + timedelta(
+            hours=24
+        )
         users_repo.update_user(db, user)
         send_verification_email(user.email, raw_token)
         return None, None
@@ -127,47 +134,45 @@ def authenticate_user(db: Session, email: str, password: str) -> tuple[User | No
     raw_session_id = generate_session_id()
     session_hash = hash_token(raw_session_id)
     session_expires = datetime.now(timezone.utc) + timedelta(days=7)
-    
+
     session_record = SessionModel(
-        user_id=user.id,
-        session_id_hash=session_hash,
-        expires_at=session_expires
+        user_id=user.id, session_id_hash=session_hash, expires_at=session_expires
     )
     sessions_repo.create_session(db, session_record)
-    
+
     return user, raw_session_id
 
 
 def get_current_user_from_session_id(db: Session, raw_session_id: str) -> User | None:
     if not raw_session_id:
         return None
-        
+
     session_hash = hash_token(raw_session_id)
     session_record = sessions_repo.get_session_by_hash(db, session_hash)
-    
+
     if not session_record:
         return None
-        
+
     revoked_at = ensure_utc(session_record.revoked_at)
     expires_at = ensure_utc(session_record.expires_at)
-    
+
     if revoked_at or (expires_at and expires_at < datetime.now(timezone.utc)):
         return None
-        
+
     # Update last seen (throttle this in high-traffic, but fine for now)
     session_record.last_seen_at = datetime.now(timezone.utc)
     sessions_repo.update_session(db, session_record)
-    
+
     return users_repo.get_user_by_id(db, session_record.user_id)
 
 
 def revoke_session(db: Session, raw_session_id: str) -> None:
     if not raw_session_id:
         return
-        
+
     session_hash = hash_token(raw_session_id)
     session_record = sessions_repo.get_session_by_hash(db, session_hash)
-    
+
     if session_record and not session_record.revoked_at:
         session_record.revoked_at = datetime.now(timezone.utc)
         sessions_repo.update_session(db, session_record)

@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
                 connection.execute(text("SELECT 1"))
             Base.metadata.create_all(bind=engine)
             logger.info("Database connected and tables created successfully.")
-            
+
             with SessionLocal() as db:
                 seed_db(db)
             break
