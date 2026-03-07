@@ -1,4 +1,4 @@
-# Triggering pipeline with v1.4.1 (Direct token pipe login)
+# Triggering pipeline with v1.5.0 (Simple standard WIF-only configuration)
 name: Pipeline
 
 on:
@@ -22,7 +22,7 @@ jobs:
   build-backend:
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
-    uses: null-pointer-sch/cicd-templates/.github/workflows/docker-build-push.yml@v1.4.1
+    uses: null-pointer-sch/cicd-templates/.github/workflows/docker-build-push.yml@v1.5.0
     with:
       image-name: "internal-platform-api-backend"
       project-id: "internal-platform-api"
@@ -37,7 +37,7 @@ jobs:
   build-frontend:
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
-    uses: null-pointer-sch/cicd-templates/.github/workflows/docker-build-push.yml@v1.4.1
+    uses: null-pointer-sch/cicd-templates/.github/workflows/docker-build-push.yml@v1.5.0
     with:
       image-name: "internal-platform-api-frontend"
       project-id: "internal-platform-api"
@@ -52,7 +52,7 @@ jobs:
   deploy-infra:
     needs: [build-backend, build-frontend]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
-    uses: null-pointer-sch/cicd-templates/.github/workflows/terraform-deploy.yml@v1.4.0
+    uses: null-pointer-sch/cicd-templates/.github/workflows/terraform-deploy.yml@v1.5.0
     with:
       project-id: "internal-platform-api"
       region: "europe-west1"
