@@ -14,11 +14,15 @@ provider "google" {
 
 # Artifact Registry via GitHub Module
 module "artifact_repo" {
-  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-artifact-registry?ref=v1.0.0"
+  source = "git::https://github.com/null-pointer-sch/cicd-templates.git//modules/google-artifact-registry?ref=v1.1.0"
 
   region        = var.region
   repository_id = var.artifact_repo_id
   description   = "Repo for internal-platform-api images"
+
+  writers = [
+    "serviceAccount:github-actions-deploy@internal-platform-api.iam.gserviceaccount.com"
+  ]
 }
 
 import {
