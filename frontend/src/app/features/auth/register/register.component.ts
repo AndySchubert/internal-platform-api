@@ -15,6 +15,8 @@ export class RegisterComponent {
   registerForm: FormGroup;
   error: string | null = null;
   successMessage: string | null = null;
+  verificationUrl: string | null = null;
+  emailMode: string | null = null;
   loading = false;
 
   constructor(
@@ -50,12 +52,16 @@ export class RegisterComponent {
     this.loading = true;
     this.error = null;
     this.successMessage = null;
+    this.verificationUrl = null;
+    this.emailMode = null;
 
     const { email, password } = this.registerForm.value;
     this.authService.register({ email, password }).subscribe({
       next: (res) => {
         this.loading = false;
-        this.successMessage = res.detail || 'Success! Please check your email to verify your account.';
+        this.successMessage = res.detail;
+        this.verificationUrl = res.verification_url || null;
+        this.emailMode = res.email_mode || null;
         this.registerForm.reset();
       },
       error: (err) => {

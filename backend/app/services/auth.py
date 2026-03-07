@@ -26,10 +26,11 @@ def ensure_utc(dt: datetime | None) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
-def register_user(db: Session, user_in: UserCreate) -> None:
+def register_user(db: Session, user_in: UserCreate) -> str | None:
     """
     Register a user. If they already exist, we silently do nothing or resend email.
     To prevent enumeration, we always return generic success from the API.
+    Returns the verification link if in mock_api mode.
     """
     existing = users_repo.get_user_by_email(db, user_in.email)
 
@@ -37,13 +38,15 @@ def register_user(db: Session, user_in: UserCreate) -> None:
     token_hash = hash_token(raw_token)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
 
+    verification_link = None
+
     if existing:
         # If user exists but is not verified, we can resend the email.
         if not existing.is_verified:
             existing.verification_token_hash = token_hash
             existing.verification_token_expires_at = expires_at
             users_repo.update_user(db, existing)
-            send_verification_email(existing.email, raw_token)
+            verification_link = send_verification_email(existing.email, raw_token)
         # If already verified, we do nothing to prevent enumeration
         import logging
 
@@ -51,7 +54,7 @@ def register_user(db: Session, user_in: UserCreate) -> None:
         logger.info(
             f"Account {existing.email} is already verified. Generic response returned, no email sent."
         )
-        return
+        return verification_link
 
     # New user
     user = User(
@@ -62,7 +65,8 @@ def register_user(db: Session, user_in: UserCreate) -> None:
         verification_token_expires_at=expires_at,
     )
     users_repo.create_user(db, user)
-    send_verification_email(user.email, raw_token)
+    verification_link = send_verification_email(user.email, raw_token)
+    return verification_link
 
 
 def verify_email_token(db: Session, token: str) -> bool:
@@ -88,19 +92,19 @@ def verify_email_token(db: Session, token: str) -> bool:
 
 def authenticate_user(
     db: Session, email: str, password: str
-) -> tuple[User | None, str | None]:
+) -> tuple[User | None, str | None, str | None]:
     """
-    Authenticate user, enforce lockouts, return (User, raw_session_id) if successful.
+    Authenticate user, enforce lockouts, return (User, raw_session_id, verification_link) if successful.
     """
     user = users_repo.get_user_by_email(db, email)
 
     if not user:
-        return None, None
+        return None, None, None
 
     # Check Lockout
     lockout_until = ensure_utc(user.lockout_until)
     if lockout_until and lockout_until > datetime.now(timezone.utc):
-        return None, None
+        return None, None, None
 
     # Check Password
     if not verify_password(password, user.password_hash):
@@ -110,7 +114,7 @@ def authenticate_user(
         if user.failed_login_attempts >= 5:
             user.lockout_until = datetime.now(timezone.utc) + timedelta(minutes=15)
         users_repo.update_user(db, user)
-        return None, None
+        return None, None, None
 
     # Check Verified Status (Must be verified to login)
     if not user.is_verified:
@@ -121,8 +125,8 @@ def authenticate_user(
             hours=24
         )
         users_repo.update_user(db, user)
-        send_verification_email(user.email, raw_token)
-        return None, None
+        verification_link = send_verification_email(user.email, raw_token)
+        return None, None, verification_link
 
     # Success: Reset lockouts
     user.failed_login_attempts = 0
@@ -140,7 +144,7 @@ def authenticate_user(
     )
     sessions_repo.create_session(db, session_record)
 
-    return user, raw_session_id
+    return user, raw_session_id, None
 
 
 def get_current_user_from_session_id(db: Session, raw_session_id: str) -> User | None:

@@ -15,6 +15,8 @@ import { environment } from '../../../../environments/environment';
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   error: string | null = null;
+  verificationUrl: string | null = null;
+  emailMode: string | null = null;
   loading = false;
   isDevelopment = !environment.production;
 
@@ -63,6 +65,9 @@ export class LoginComponent implements OnInit {
         console.error('LoginComponent: Login failed', err);
         this.ngZone.run(() => {
           this.loading = false;
+          this.verificationUrl = err.error?.verification_url || null;
+          this.emailMode = err.error?.email_mode || null;
+
           this.error = err.error?.detail || 'Login failed. Please check your credentials.';
           // If the error object is a complex validation detail (422), flatten it
           if (Array.isArray(err.error?.detail)) {

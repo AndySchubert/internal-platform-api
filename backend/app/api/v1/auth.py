@@ -1,14 +1,16 @@
 # app/api/v1/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import UserCreate, UserRead, RegisterResponse
 from app.services import auth as auth_service
 from app.core.security import generate_random_token
+from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -36,12 +38,19 @@ class VerifyTokenRequest(BaseModel):
     token: str
 
 
-@router.post("/register", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_202_ACCEPTED)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    auth_service.register_user(db, user_in)
-    return {
-        "detail": "If the email can be registered, a verification link has been sent."
-    }
+    verification_url = auth_service.register_user(db, user_in)
+    
+    detail = "If the email can be registered, a verification link has been sent."
+    if settings.email_mode == "mock_terminal":
+        detail += " Device Notice: Since this is a local environment, the link was printed to your terminal."
+    
+    return RegisterResponse(
+        detail=detail,
+        verification_url=verification_url,
+        email_mode=settings.email_mode
+    )
 
 
 @router.post("/verify-email")
@@ -61,9 +70,25 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    user, session_id = auth_service.authenticate_user(
+    user, session_id, verification_url = auth_service.authenticate_user(
         db, form_data.username, form_data.password
     )
+    
+    if verification_url:
+        # Password was correct but email not verified
+        detail = "Please verify your email before logging in."
+        if settings.email_mode == "mock_terminal":
+            detail += " The verification link has been printed to the server terminal."
+        
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={
+                "detail": detail,
+                "verification_url": verification_url,
+                "email_mode": settings.email_mode
+            }
+        )
+
     if not user or not session_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,7 +105,7 @@ def login(
         path="/",
     )
 
-    # Set CSRF Token Cookie (Angular looks for XSRF-TOKEN by default and replicates it to header X-XSRF-TOKEN)
+    # Set CSRF Token Cookie
     csrf_token = generate_random_token()
     response.set_cookie(
         key="XSRF-TOKEN",

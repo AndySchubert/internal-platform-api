@@ -14,7 +14,19 @@ class Settings(BaseModel):
 
     @property
     def is_development(self) -> bool:
-        return self.database_url.startswith("sqlite")
+        return self.database_url.startswith("sqlite") or self.email_mode != "real"
+
+    # Email Configuration
+    # EMAIL_MODE can be: "mock_terminal" (logs to stdout), "mock_api" (returns link in API response), or "real" (sends actual email)
+    email_mode: str = os.getenv("EMAIL_MODE", "mock_terminal")
+    require_email_verification: bool = os.getenv("REQUIRE_EMAIL_VERIFICATION", "true").lower() == "true"
+    
+    # Real Email Settings (SMTP)
+    smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user: str = os.getenv("SMTP_USER", "")
+    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
+    smtp_from: str = os.getenv("SMTP_FROM", "noreply@envctl.com")
 
 
 settings = Settings()

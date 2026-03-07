@@ -15,6 +15,12 @@ export interface RegisterData {
   password: string;
 }
 
+export interface RegisterResponse {
+  detail: string;
+  verification_url?: string;
+  email_mode?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -50,8 +56,8 @@ export class AuthService {
     );
   }
 
-  register(data: RegisterData): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/api/v1/auth/register`, data);
+  register(data: RegisterData): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${environment.apiUrl}/api/v1/auth/register`, data);
   }
 
   verifyEmail(token: string): Observable<any> {

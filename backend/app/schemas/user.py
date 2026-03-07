@@ -15,3 +15,9 @@ class UserRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RegisterResponse(BaseModel):
+    detail: str
+    verification_url: str | None = None
+    email_mode: str | None = None
