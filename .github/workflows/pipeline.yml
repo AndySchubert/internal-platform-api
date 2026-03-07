@@ -25,7 +25,7 @@ jobs:
     with:
       image-name: "internal-platform-api-backend"
       project-id: "internal-platform-api"
-      repo-name: "internal-platform-api-eu"
+      repo-name: "internal-platform-api"
       region: "europe-west1"
       dockerfile-path: "backend/Dockerfile"
       docker-context: "backend"
@@ -40,7 +40,7 @@ jobs:
     with:
       image-name: "internal-platform-api-frontend"
       project-id: "internal-platform-api"
-      repo-name: "internal-platform-api-eu"
+      repo-name: "internal-platform-api"
       region: "europe-west1"
       dockerfile-path: "frontend/Dockerfile"
       docker-context: "frontend"
@@ -55,7 +55,7 @@ jobs:
     with:
       project-id: "internal-platform-api"
       region: "europe-west1"
-      artifact-repo-id: "internal-platform-api-eu"
+      artifact-repo-id: "internal-platform-api"
       image-tag: ${{ github.sha }}
       working-directory: "terraform"
 
