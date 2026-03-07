@@ -1,4 +1,4 @@
-# Triggering pipeline with Modular Actions
+# Optimized Pipeline using Parallel Modular Actions
 name: Pipeline
 
 on:
@@ -12,6 +12,13 @@ permissions:
   contents: read
   id-token: write
 
+env:
+  PROJECT_ID: "internal-platform-api"
+  REGION: "europe-west1"
+  ARTIFACT_REPO_ID: "internal-platform-api"
+  GCP_WIF_PROVIDER: "projects/1062901461072/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  GCP_SERVICE_ACCOUNT: "github-actions-deploy@internal-platform-api.iam.gserviceaccount.com"
+
 jobs:
   test:
     uses: null-pointer-sch/cicd-templates/.github/workflows/python-ci.yml@main
@@ -22,42 +29,39 @@ jobs:
   build-and-publish:
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend')
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            context: backend
+            dockerfile: backend/Dockerfile
+          - name: frontend
+            context: frontend
+            dockerfile: frontend/Dockerfile
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      # Inherited Auth from top-level env
       - name: Auth to GCP
         uses: null-pointer-sch/cicd-templates/actions/gcp-auth@main
         with:
-          wif-provider: "projects/1062901461072/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
-          service-account: "github-actions-deploy@internal-platform-api.iam.gserviceaccount.com"
-          region: "europe-west1"
+          wif-provider: ${{ env.GCP_WIF_PROVIDER }}
+          service-account: ${{ env.GCP_SERVICE_ACCOUNT }}
+          region: ${{ env.REGION }}
 
-      # Decoupled Build Steps
-      - name: Build Backend
+      # Decoupled Build and Publish
+      - name: Build ${{ matrix.name }}
         uses: null-pointer-sch/cicd-templates/actions/docker-build@main
         with:
-          image-name: "europe-west1-docker.pkg.dev/internal-platform-api/internal-platform-api/internal-platform-api-backend:${{ github.sha }}"
-          dockerfile-path: "backend/Dockerfile"
-          docker-context: "backend"
+          image-name: "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}/internal-platform-api-${{ matrix.name }}:${{ github.sha }}"
+          dockerfile-path: ${{ matrix.dockerfile }}
+          docker-context: ${{ matrix.context }}
 
-      - name: Build Frontend
-        uses: null-pointer-sch/cicd-templates/actions/docker-build@main
-        with:
-          image-name: "europe-west1-docker.pkg.dev/internal-platform-api/internal-platform-api/internal-platform-api-frontend:${{ github.sha }}"
-          dockerfile-path: "frontend/Dockerfile"
-          docker-context: "frontend"
-
-      # Decoupled Publish Steps
-      - name: Publish Backend
+      - name: Publish ${{ matrix.name }}
         uses: null-pointer-sch/cicd-templates/actions/docker-push@main
         with:
-          image-name: "europe-west1-docker.pkg.dev/internal-platform-api/internal-platform-api/internal-platform-api-backend:${{ github.sha }}"
-
-      - name: Publish Frontend
-        uses: null-pointer-sch/cicd-templates/actions/docker-push@main
-        with:
-          image-name: "europe-west1-docker.pkg.dev/internal-platform-api/internal-platform-api/internal-platform-api-frontend:${{ github.sha }}"
+          image-name: "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO_ID }}/internal-platform-api-${{ matrix.name }}:${{ github.sha }}"
 
   deploy-image:
     needs: build-and-publish
