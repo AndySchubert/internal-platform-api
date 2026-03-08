@@ -63,6 +63,11 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'environments/:envId/deployments/:depId/logs',
+    loadComponent: () => import('./features/deployments/deployment-logs/deployment-logs.component').then(m => m.DeploymentLogsComponent),
+    canActivate: [AuthGuard]
+  },
+  {
     path: '**',
     redirectTo: '/login'
   }

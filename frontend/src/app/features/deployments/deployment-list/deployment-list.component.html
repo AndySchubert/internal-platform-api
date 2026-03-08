@@ -44,7 +44,8 @@
           </div>
           <div class="info-row" *ngIf="deployment.logs_url">
             <span class="label">Logs:</span>
-            <a [href]="deployment.logs_url" target="_blank" rel="noopener noreferrer" class="value">View Logs</a>
+            <a [routerLink]="['/environments', environmentId, 'deployments', deployment.id, 'logs']" class="value">View
+              Logs</a>
           </div>
         </div>
       </div>

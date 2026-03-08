@@ -1,0 +1,28 @@
+<div class="container">
+  <div class="header-section">
+    <div>
+      <nav class="breadcrumb">
+        <a routerLink="/projects">Projects</a>
+        <span>/</span>
+        <a [routerLink]="['/environments', envId, 'deployments']" *ngIf="envId">Deployments</a>
+        <span>/</span>
+        <span>Logs</span>
+      </nav>
+      <h1>Deployment Logs</h1>
+      <p class="subtitle">Real-time output for deployment {{ depId }}</p>
+    </div>
+    <a [routerLink]="['/environments', envId, 'deployments']" class="btn btn-secondary" *ngIf="envId">Back to List</a>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <app-loading-spinner></app-loading-spinner>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error" class="logs-container">
+    <pre class="logs-content">{{ logs }}</pre>
+  </div>
+</div>

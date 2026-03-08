@@ -21,6 +21,7 @@ class Deployment(Base):
     )  # pending|running|succeeded|failed
 
     logs_url = Column(String(512), nullable=True)
+    logs = Column(String, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

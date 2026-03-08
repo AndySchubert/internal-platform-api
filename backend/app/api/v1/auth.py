@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead, RegisterResponse
+from app.schemas.auth import VerifyTokenRequest
 from app.services import auth as auth_service
 from app.core.security import generate_random_token
 from app.core.config import settings
@@ -15,27 +16,17 @@ from app.core.config import settings
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def get_current_user(
-    request: Request,
-    db: Session = Depends(get_db),
-) -> User:
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     session_id = request.cookies.get("envctl-session")
     if not session_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
     user = auth_service.get_current_user_from_session_id(db, session_id)
+
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
 
     return user
-
-
-class VerifyTokenRequest(BaseModel):
-    token: str
 
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -68,14 +59,8 @@ def verify_email(req: VerifyTokenRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(
-    response: Response,
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
-):
-    user, session_id, verification_url = auth_service.authenticate_user(
-        db, form_data.username, form_data.password
-    )
+def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user, session_id, verification_url = auth_service.authenticate_user(db, form_data.username, form_data.password)
     
     if verification_url:
         # Password was correct but email not verified
@@ -100,23 +85,18 @@ def login(
             detail="Invalid email or password.",
         )
 
-    # Cookie Security Settings for Cloud Run (different origins)
-    # We use SameSite=None + Secure=True for cross-origin cookie support.
-    # For local dev over plain HTTP, we use SameSite=Lax and Secure=False.
     use_secure_cookies = settings.app_env != "local"
     samesite_policy = "none" if use_secure_cookies else "lax"
 
-    # Set Session Cookie
     response.set_cookie(
         key="envctl-session",
         value=session_id,
         httponly=True,
-        secure=True,          # in Cloud Run / HTTPS
-        samesite="none",      # for cross-origin frontend/backend
+        secure=True,         
+        samesite="none",   
         path="/",
     )
 
-    # Set CSRF Token Cookie
     csrf_token = generate_random_token()
     response.set_cookie(
         key="XSRF-TOKEN",

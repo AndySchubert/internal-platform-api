@@ -44,3 +44,25 @@ def ensure_user_columns(engine: Engine):
         logger.error(f"Error during database migration: {e}")
         # We don't raise here to allow the app to attempt starting anyway, 
         # though it will likely fail later if crucial columns are missing.
+
+def ensure_deployment_columns(engine: Engine):
+    """
+    Ensures that all required columns exist in the deployments table.
+    """
+    required_columns = {
+        "logs": "TEXT",
+    }
+
+    try:
+        inspector = inspect(engine)
+        existing_columns = [col["name"] for col in inspector.get_columns("deployments")]
+        
+        with engine.connect() as conn:
+            for column_name, column_type in required_columns.items():
+                if column_name not in existing_columns:
+                    logger.info(f"Adding missing column '{column_name}' to deployments table.")
+                    conn.execute(text(f"ALTER TABLE deployments ADD COLUMN {column_name} {column_type}"))
+            conn.commit()
+            logger.info("Deployments table schema check completed.")
+    except Exception as e:
+        logger.error(f"Error during deployments database migration: {e}")

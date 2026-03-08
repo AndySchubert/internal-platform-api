@@ -28,13 +28,25 @@ def run_deployment(deployment_id, db_factory=SessionLocal):
 
         # Simulate "deploying"
         dep.status = "running"
+        logs = [
+            f"[{time.strftime('%H:%M:%S')}] Starting deployment for version {dep.version}...",
+            f"[{time.strftime('%H:%M:%S')}] Validating environment {env.name}...",
+            f"[{time.strftime('%H:%M:%S')}] Pulling container images...",
+        ]
+        dep.logs = "\n".join(logs)
         deployments_repo.save_deployment(db, dep)
 
         time.sleep(2)
 
         # In real life: helm upgrade / kubectl apply / etc.
+        logs.extend([
+            f"[{time.strftime('%H:%M:%S')}] Applying Kubernetes manifests...",
+            f"[{time.strftime('%H:%M:%S')}] Deployment successful.",
+            f"[{time.strftime('%H:%M:%S')}] Load balancer updated.",
+        ])
         dep.status = "succeeded"
-        dep.logs_url = f"https://logs.envctl.local/deployments/{dep.id}"
+        dep.logs = "\n".join(logs)
+        dep.logs_url = f"/environments/{env.id}/deployments/{dep.id}/logs"
         deployments_repo.save_deployment(db, dep)
 
     finally:
