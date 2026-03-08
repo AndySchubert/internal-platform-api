@@ -39,21 +39,33 @@ def run_smoke_test():
     except Exception as e:
         errors.append(f"Backend health connection failed: {e}")
 
-    # 3. Check API Core (Projects endpoint)
+    # 3. Check Proxy (via Frontend URL)
     try:
-        print(f"\n[3/3] Testing API core (Projects list)...")
-        # We expect 401 Unauthorized since we're not logged in, 
-        # but 401 proves the app is running and auth is working.
-        # If it were 500 or connection refused, that's a failure.
-        response = httpx.get(f"{backend_url}/api/v1/projects", timeout=10.0)
+        print(f"\n[3/4] Testing API proxying (Projects list via Frontend)...")
+        # We hit the FRONTEND URL to ensure Nginx proxying is working
+        response = httpx.get(f"{frontend_url}/api/v1/projects", timeout=10.0)
         if response.status_code == 401:
-            print("✅ API core is reachable (received expected 401 Unauthorized)!")
-        elif response.status_code == 200:
-             print("✅ API core is reachable (received 200 OK)!")
+            print("✅ API proxy is working (received expected 401 Unauthorized via Frontend)!")
         else:
-            errors.append(f"API core test failed: Received {response.status_code} instead of 401/200")
+            errors.append(f"API proxy test failed: Received {response.status_code} instead of 401")
     except Exception as e:
-        errors.append(f"API core connection failed: {e}")
+        errors.append(f"API proxy connection failed: {e}")
+
+    # 4. Check Registration Flow
+    try:
+        print(f"\n[4/4] Testing User Registration flow...")
+        unique_email = f"smoke-test-{int(time.time())}@example.com"
+        reg_data = {"email": unique_email, "password": "smoketestpassword123"}
+        
+        response = httpx.post(f"{frontend_url}/api/v1/auth/register", json=reg_data, timeout=10.0)
+        
+        # We expect 202 Accepted for registration
+        if response.status_code == 202:
+            print(f"✅ User registration successful for {unique_email}!")
+        else:
+            errors.append(f"Registration failed: Received {response.status_code} - {response.text}")
+    except Exception as e:
+        errors.append(f"Registration flow failed: {e}")
 
     if errors:
         print("\n❌ Smoke Test FAILED with the following errors:")
