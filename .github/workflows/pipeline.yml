@@ -22,6 +22,9 @@ jobs:
   deploy:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/pytest' || github.ref == 'refs/heads/feature/frontend' || github.ref == 'refs/heads/feature/fix-cloud-env')
     runs-on: ubuntu-latest
+    outputs:
+      backend_url: ${{ steps.get_urls.outputs.backend_url }}
+      frontend_url: ${{ steps.get_urls.outputs.frontend_url }}
     steps:
       # 1. Checkout & Setup
       - name: Checkout
@@ -179,21 +182,68 @@ jobs:
           working-directory: "terraform"
           database-url: ${{ secrets.DATABASE_URL }}
 
-      # 12. Post-Deploy Smoke Test
-      - name: Post-Deploy Smoke Test
+      - name: Get Deployment URLs
+        id: get_urls
         shell: bash
         run: |
-          export PATH="/home/runner/.local/bin:$PATH"
           cd terraform
-          BACKEND_URL=$(terraform output -raw backend_url)
-          FRONTEND_URL=$(terraform output -raw frontend_url)
-          
-          cd ..
-          # Run the robust smoke test script using poetry to access httpx
-          # We must run from the backend directory where pyproject.toml is located
-          echo "🚀 Running post-deploy smoke test..."
+          echo "backend_url=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
+          echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
+
+  smoke-backend:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        shell: bash
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "/home/runner/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: poetry install
+
+      - name: Smoke Test Backend
+        env:
+          BACKEND_URL: ${{ needs.deploy.outputs.backend_url }}
+        run: |
           cd backend
-          FRONTEND_URL=$FRONTEND_URL BACKEND_URL=$BACKEND_URL poetry run python ../scripts/smoke_test.py || {
-            echo "❌ ERROR: Smoke test failed! See details above."
-            exit 1
-          }
+          poetry run python ../scripts/smoke_backend.py
+
+  smoke-frontend:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        shell: bash
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "/home/runner/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: poetry install
+
+      - name: Smoke Test Frontend
+        env:
+          FRONTEND_URL: ${{ needs.deploy.outputs.frontend_url }}
+        run: |
+          cd backend
+          poetry run python ../scripts/smoke_frontend.py
