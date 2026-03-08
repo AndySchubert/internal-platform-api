@@ -22,6 +22,7 @@ class Deployment(Base):
 
     logs_url = Column(String(512), nullable=True)
     logs = Column(String, nullable=True)
+    app_logs = Column(String, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

@@ -51,6 +51,7 @@ def ensure_deployment_columns(engine: Engine):
     """
     required_columns = {
         "logs": "TEXT",
+        "app_logs": "TEXT",
     }
 
     try:

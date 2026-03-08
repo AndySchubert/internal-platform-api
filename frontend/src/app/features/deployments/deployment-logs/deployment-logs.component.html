@@ -1,17 +1,40 @@
 <div class="container">
   <div class="header-section">
-    <div>
+    <div class="title-group">
       <nav class="breadcrumb">
         <a routerLink="/projects">Projects</a>
         <span>/</span>
-        <a [routerLink]="['/environments', envId, 'deployments']" *ngIf="envId">Deployments</a>
+        <a [routerLink]="['/environments', envId, 'deployments']">Deployments</a>
         <span>/</span>
-        <span>Logs</span>
+        <span class="active-breadcrumb">{{ activeTab === 'deployment' ? 'Deployment Logs' : 'App Logs' }}</span>
       </nav>
-      <h1>Deployment Logs</h1>
-      <p class="subtitle">Real-time output for deployment {{ depId }}</p>
+      <h1 class="fixed-title">{{ activeTab === 'deployment' ? 'Deployment Logs' : 'App Runtime Logs' }}</h1>
+      <p class="subtitle">Showing logs for deployment <code>{{ depId }}</code></p>
     </div>
-    <a [routerLink]="['/environments', envId, 'deployments']" class="btn btn-secondary" *ngIf="envId">Back to List</a>
+
+    <div class="actions-group">
+      <div class="tabs" [class.hidden]="loading || error">
+        <button [class.active]="activeTab === 'app'" (click)="activeTab = 'app'">
+          App Output
+        </button>
+        <button [class.active]="activeTab === 'deployment'" (click)="activeTab = 'deployment'">
+          Deployment
+        </button>
+      </div>
+
+      <div class="search-container" [class.hidden]="loading || error">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search logs..." [(ngModel)]="searchQuery" (input)="onSearchChange()"
+          class="search-input">
+        <span class="search-results" *ngIf="searchQuery && matchesCount > 0">
+          {{ currentMatchIndex + 1 }}/{{ matchesCount }}
+        </span>
+      </div>
+
+      <a [routerLink]="['/environments', envId, 'deployments']" class="btn btn-secondary">
+        Back to List
+      </a>
+    </div>
   </div>
 
   <div *ngIf="loading" class="loading-container">
@@ -22,7 +45,15 @@
     {{ error }}
   </div>
 
-  <div *ngIf="!loading && !error" class="logs-container">
-    <pre class="logs-content">{{ logs }}</pre>
+  <div *ngIf="!loading && !error" class="logs-wrapper">
+    <div class="logs-container" #scrollContainer (scroll)="onScroll($event)">
+      <pre class="logs-content" [innerHTML]="highlightedLogs"></pre>
+    </div>
+
+    <button class="scroll-bottom-btn" *ngIf="!followLogs" (click)="scrollToBottom()" [@fadeInOut]>
+      <span class="btn-icon">↓</span>
+      Follow Logs
+      <span class="new-logs-badge" *ngIf="hasNewLogs"></span>
+    </button>
   </div>
 </div>

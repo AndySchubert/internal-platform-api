@@ -38,6 +38,16 @@ def run_deployment(deployment_id, db_factory=SessionLocal):
 
         time.sleep(2)
 
+        # Simulate "app logs"
+        app_logs = [
+            f"[{time.strftime('%H:%M:%S')}] [INFO] Starting application...",
+            f"[{time.strftime('%H:%M:%S')}] [INFO] Initializing app modules...",
+            f"[{time.strftime('%H:%M:%S')}] [DEBUG] Database connection pool initialized.",
+            f"[{time.strftime('%H:%M:%S')}] [INFO] Application listening on port 8080.",
+            f"[{time.strftime('%H:%M:%S')}] [INFO] Health check: OK",
+        ]
+        dep.app_logs = "\n".join(app_logs)
+
         # In real life: helm upgrade / kubectl apply / etc.
         logs.extend([
             f"[{time.strftime('%H:%M:%S')}] Applying Kubernetes manifests...",
